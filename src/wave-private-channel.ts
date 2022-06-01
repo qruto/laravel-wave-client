@@ -4,7 +4,7 @@ import WaveChannel from './wave-channel';
 export default class WavePrivateChannel extends WaveChannel {
     protected authorized = false;
 
-    protected afterAuthCallbacks: Record<string, (() => void)> = {};
+    protected afterAuthCallbacks: Record<string, (() => void)[]> = {};
 
     constructor(connection, name, options) {
         super(connection, name, options);
@@ -13,7 +13,7 @@ export default class WavePrivateChannel extends WaveChannel {
             this.authorized = true;
 
             Object.keys(this.afterAuthCallbacks).forEach((event) => {
-                this.afterAuthCallbacks[event]();
+                this.afterAuthCallbacks[event].forEach((callback) => callback());
 
                 delete this.afterAuthCallbacks[event];
             });
@@ -33,9 +33,13 @@ export default class WavePrivateChannel extends WaveChannel {
             return this;
         }
 
-        this.afterAuthCallbacks[event] = () => {
+        if (!this.afterAuthCallbacks[event]) {
+            this.afterAuthCallbacks[event] = [];
+        }
+
+        this.afterAuthCallbacks[event].push(() => {
             super.on(event, callback);
-        };
+        });
 
         return this;
     }

@@ -11,7 +11,7 @@ export default function request(connection: EventSourceConnection) {
             },
             body: JSON.stringify(data || {}),
         }).then((response) => {
-            return response.headers['Content-Type'] === 'application/json' ? response.json() : response;
+            return response.headers.get('content-type') === 'application/json' ? response.json() : response;
         });
 
         return connection.source.readyState !== EventSource.OPEN ? new Promise((resolve) => {

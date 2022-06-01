@@ -27,7 +27,7 @@ export default class WaveChannel extends Channel {
     /**
      * The event callbacks applied to the channel.
      */
-    events: any = {};
+    protected events: string[] = [];
 
     /**
      * Create a new class instance.
@@ -38,19 +38,10 @@ export default class WaveChannel extends Channel {
         /**
          * The event callbacks applied to the channel.
          */
-        this.events = {};
         this.name = name;
         this.connection = connection;
         this.options = options;
         this.eventFormatter = new EventFormatter(this.options.namespace);
-    }
-
-    subscribed(callback: Function): Channel {
-        return this;
-    }
-
-    error(callback: Function): Channel {
-        return this;
     }
 
     /**
@@ -66,8 +57,8 @@ export default class WaveChannel extends Channel {
      */
     stopListening(event) {
         const name = this.eventFormatter.format(event);
-        this.connection.unsubscribe(event);
-        delete this.events[name];
+        this.connection.unsubscribe(`${this.name}.${name}`);
+        this.events = this.events.filter(e => e !== name);
 
         return this;
     }
@@ -75,18 +66,29 @@ export default class WaveChannel extends Channel {
     /**
      * Bind the channel's socket to an event and store the callback.
      */
-    public on(event: string, callback: Function) {
-        this.events[event] = callback;
+    public on(event: string, callback: Function): WaveChannel {
+        if (!this.events.find(e => e === event)) {
+            this.events.push(event);
+        }
+
         this.connection.subscribe(`${this.name}.${event}`, callback);
+
+        return this;
     }
 
     public unsubscribe(): void {
-        Object.keys(this.events).forEach((event) => {
-            this.events[event].forEach((callback) => {
-                this.connection.unsubscribe(`${this.name}.${event}`);
-            });
-
-            delete this.events[event];
+        this.events.forEach(event => {
+            this.connection.unsubscribe(`${this.name}.${event}`);
         });
+
+        this.events = [];
+    }
+
+    subscribed(callback: Function): WaveChannel {
+        return this;
+    }
+
+    error(callback: Function): WaveChannel {
+        return this;
     }
 }

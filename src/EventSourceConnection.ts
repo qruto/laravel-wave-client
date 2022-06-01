@@ -2,7 +2,7 @@ export class EventSourceConnection {
     public source: EventSource;
     protected id: string;
 
-    protected listeners: Record<string, EventListener> = {};
+    protected listeners: Record<string, Map<Function, EventListener>> = {};
     protected afterConnectCallbacks: ((connectionId) => void)[] = [];
 
     public create() {
@@ -16,7 +16,7 @@ export class EventSourceConnection {
         this.source.addEventListener('error', (event: any) => {
             switch (event.target.readyState) {
                 case EventSource.CONNECTING:
-                    console.log('Reconnecting...');
+                    console.log('Wave reconnecting...');
                     break;
 
                 case EventSource.CLOSED:
@@ -34,7 +34,9 @@ export class EventSourceConnection {
 
     private resubscribe() {
         for (let event in this.listeners) {
-            this.subscribe(event, this.listeners[event]);
+            this.listeners[event].forEach(listener => {
+                this.source.addEventListener(event, listener);
+            });
         }
     }
 
@@ -43,13 +45,27 @@ export class EventSourceConnection {
             callback(JSON.parse(event.data).data);
         };
 
-        this.listeners[event] = listener;
+        if (!this.listeners[event]) {
+            this.listeners[event] = new Map();
+        }
+
+        this.listeners[event].set(callback, listener);
+
         this.source.addEventListener(event, listener);
     }
 
     public unsubscribe(event: string) {
-        this.source.removeEventListener(event, this.listeners[event]);
+        this.listeners[event].forEach(listener => {
+            this.source.removeEventListener(event, listener);
+        });
+
         delete this.listeners[event];
+    }
+
+    public removeListener(event: string, callback: Function) {
+        this.source.removeEventListener(event, this.listeners[event].get(callback));
+
+        this.listeners[event].delete(callback);
     }
 
     public disconnect() {

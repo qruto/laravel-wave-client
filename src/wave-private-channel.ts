@@ -26,15 +26,17 @@ export default class WavePrivateChannel extends WaveChannel {
         return this;
     }
 
-    public async on(event: string, callback: Function): Promise<void> {
+    public on(event: string, callback: Function): WavePrivateChannel {
         if (this.authorized) {
             super.on(event, callback);
 
-            return;
+            return this;
         }
 
         this.afterAuthCallbacks[event] = () => {
             super.on(event, callback);
         };
+
+        return this;
     }
 }

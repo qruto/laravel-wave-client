@@ -8,6 +8,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
     constructor(connection, name, options) {
         super(connection, name, options);
 
+        // TODO: custom route
         request(connection).post('presence-channel-users', { channel: name }).then((users) => this.onJoinCallback(users));
 
         if (window) {

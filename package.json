@@ -5,6 +5,7 @@
   "scripts": {
     "build": "npm run compile && npm run declarations",
     "compile": "./node_modules/.bin/rollup -c",
+    "watch": "./node_modules/.bin/rollup --config --watch",
     "declarations": "./node_modules/.bin/tsc --emitDeclarationOnly",
     "lint": "eslint --ext .js,.ts ./src",
     "prepublish": "npm run build",

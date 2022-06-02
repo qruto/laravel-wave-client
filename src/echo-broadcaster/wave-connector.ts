@@ -1,6 +1,6 @@
-import { Connector } from './echo/connector/connector';
+import { Connector } from '../echo/connector/connector';
 import WaveChannel from './wave-channel';
-import { EventSourceConnection } from './EventSourceConnection';
+import { EventSourceConnection } from '../EventSourceConnection';
 import WavePresenceChannel from './wave-presence-channel';
 import WavePrivateChannel from './wave-private-channel';
 

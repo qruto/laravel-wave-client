@@ -1,6 +1,6 @@
-import { Channel } from './echo/channel/channel';
-import { EventFormatter } from './echo/util/event-formatter';
-import { EventSourceConnection } from './EventSourceConnection';
+import { Channel } from '../echo/channel/channel';
+import { EventFormatter } from '../echo/util/event-formatter';
+import { EventSourceConnection } from '../EventSourceConnection';
 
 export default class WaveChannel extends Channel {
 

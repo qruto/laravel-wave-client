@@ -1,4 +1,4 @@
-import request from './echo/util/request';
+import request from '../echo/util/request';
 import WaveChannel from './wave-channel';
 
 export default class WavePrivateChannel extends WaveChannel {

@@ -63,9 +63,17 @@ export class EventSourceConnection {
     }
 
     public removeListener(event: string, callback: Function) {
+        if (!this.listeners[event] || !this.listeners[event].has(callback)) {
+            return;
+        }
+
         this.source.removeEventListener(event, this.listeners[event].get(callback));
 
         this.listeners[event].delete(callback);
+
+        if (this.listeners[event].size === 0) {
+            delete this.listeners[event];
+        }
     }
 
     public disconnect() {

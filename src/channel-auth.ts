@@ -1,4 +1,5 @@
-import request from "./echo/util/request";
+import request from "./util/request";
+
 import { EventSourceConnection } from "./EventSourceConnection";
 
 export interface AuthRequest {
@@ -8,7 +9,7 @@ export interface AuthRequest {
 
 export function authRequest(channel: string, connection: EventSourceConnection, authEndpoint = '/broadcasting/auth'): AuthRequest {
     let authorized = false;
-    let afterAuthCallbacks: (() => void)[] = [];
+    let afterAuthCallbacks: Function[] = [];
 
     function after(callback: Function) {
         if (authorized) {
@@ -17,7 +18,7 @@ export function authRequest(channel: string, connection: EventSourceConnection, 
             return;
         }
 
-        this.afterAuthCallbacks.push(callback);
+        afterAuthCallbacks.push(callback);
 
         return this;
     }

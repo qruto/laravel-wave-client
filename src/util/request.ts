@@ -1,4 +1,4 @@
-import { EventSourceConnection } from "../../EventSourceConnection";
+import { EventSourceConnection } from "../EventSourceConnection";
 
 export default function request(connection: EventSourceConnection) {
     function create(method: 'GET' | 'POST' | 'PUT' | 'DELETE', route: string, data?: object): Promise<Response> {

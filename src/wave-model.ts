@@ -1,5 +1,5 @@
-import { authRequest, AuthRequest } from "./channel-auth";
 import { EventSourceConnection } from "./EventSourceConnection";
+import { authRequest, AuthRequest } from "./channel-auth";
 
 const events = [
     'retrieved',
@@ -40,10 +40,27 @@ export class WaveModel {
         this.channelPrefix = `private-${this.id}`;
 
         const eventHandlerProxy = new Proxy(this, {
-            get(target, prop, receiver) {
+            get: (target, prop, receiver) => {
+                const value = Reflect.get(target, prop, receiver);
+
+                if (
+                    typeof prop !== 'symbol'
+                    && typeof value === 'function'
+                    && ['stopListening', 'notification', 'stopListeningNotification'].includes(prop)
+                ) {
+                    return (...args) => {
+                        this.auth.after(() => value.apply(this, args));
+
+                        return eventHandlerProxy;
+                    };
+                }
+
                 return typeof prop !== 'symbol' && events.includes(prop)
-                    ? (callback: Function) => target.listenEvent.call(eventHandlerProxy, prop, callback)
-                    : Reflect.get(target, prop, receiver);
+                    ? (callback: Function) => {
+                        this.auth.after(() => target.listenEvent.call(this, prop, callback));
+
+                        return eventHandlerProxy;
+                    } : value;
             }
         });
 

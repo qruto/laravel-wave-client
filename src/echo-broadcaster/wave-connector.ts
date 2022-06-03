@@ -1,8 +1,10 @@
-import { Connector } from '../echo/connector/connector';
-import WaveChannel from './wave-channel';
+import { Connector } from 'laravel-echo/src/connector/connector';
+
 import { EventSourceConnection } from '../EventSourceConnection';
-import WavePresenceChannel from './wave-presence-channel';
+
+import WaveChannel from './wave-channel';
 import WavePrivateChannel from './wave-private-channel';
+import WavePresenceChannel from './wave-presence-channel';
 
 export class WaveConnector extends Connector {
     private connection: EventSourceConnection;

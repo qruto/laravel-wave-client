@@ -1,6 +1,6 @@
 export class EventSourceConnection {
-    public source: EventSource;
     protected id: string;
+    public source: EventSource;
 
     protected listeners: Record<string, Map<Function, EventListener>> = {};
     protected afterConnectCallbacks: ((connectionId) => void)[] = [];
@@ -16,6 +16,7 @@ export class EventSourceConnection {
         this.source.addEventListener('error', (event: any) => {
             switch (event.target.readyState) {
                 case EventSource.CONNECTING:
+                    // TODO: implement
                     console.log('Wave reconnecting...');
                     break;
 
@@ -24,7 +25,6 @@ export class EventSourceConnection {
                     this.resubscribe();
                     break;
             }
-
         }, false);
     }
 

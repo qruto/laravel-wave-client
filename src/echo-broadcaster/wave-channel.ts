@@ -1,5 +1,6 @@
-import { Channel } from '../echo/channel/channel';
-import { EventFormatter } from '../echo/util/event-formatter';
+import { Channel } from "laravel-echo";
+import { EventFormatter } from 'laravel-echo/src/util/event-formatter';
+
 import { EventSourceConnection } from '../EventSourceConnection';
 
 export default class WaveChannel extends Channel {
@@ -85,7 +86,7 @@ export default class WaveChannel extends Channel {
     }
 
     subscribed(callback: Function): WaveChannel {
-        return this;
+        return callback();
     }
 
     error(callback: Function): WaveChannel {

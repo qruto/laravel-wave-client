@@ -1,6 +1,8 @@
+import request from '../util/request';
+
+import { PresenceChannel } from 'laravel-echo';
+
 import WavePrivateChannel from './wave-private-channel';
-import { PresenceChannel } from '../echo/channel/presence-channel';
-import  request from '../echo/util/request';
 
 export default class WavePresenceChannel extends WavePrivateChannel implements PresenceChannel {
     private onJoinCallback: Function;

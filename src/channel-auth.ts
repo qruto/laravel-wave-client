@@ -3,7 +3,7 @@ import request from "./util/request";
 import { EventSourceConnection } from "./EventSourceConnection";
 
 export interface AuthRequest {
-    after: (callback: Function) => any;
+    after: (callback: Function) => AuthRequest;
     response: Promise<void>;
 }
 
@@ -23,10 +23,10 @@ export function authRequest(channel: string, connection: EventSourceConnection, 
         return this;
     }
 
-    const response = request(connection).post(authEndpoint, { channel_name: channel }).then(() => {
+    const response = request(connection).post(authEndpoint, { channel_name: channel }).then((response) => {
         authorized = true;
 
-        afterAuthCallbacks.forEach((callback) => callback());
+        afterAuthCallbacks.forEach((callback) => callback(response));
 
         afterAuthCallbacks = [];
     });

@@ -1,8 +1,8 @@
-import { beforeAll } from '@jest/globals';
+import { beforeEach } from '@jest/globals';
 import { MockEvent, EventSource } from 'mocksse';
 
 export function mockEventSource() {
-    beforeAll(() => {
+    beforeEach(() => {
         EventSource.prototype.removeEventListener = function (eventName: string | symbol, listener: (...args: any[]) => void) {
             return this.removeListener(eventName, listener);
         }
@@ -11,10 +11,21 @@ export function mockEventSource() {
         new MockEvent({
             url: '/wave',
             responses: [
-            { type: 'connected', data: 'some-randmom-key'},
+                { type: 'connected', data: 'some-randmom-key'},
             ]
         })
     });
+
+    afterEach(() => {
+        const mock = new MockEvent({
+            url: '/wave',
+            responses: [
+                { type: 'ping', data: 'pong'},
+            ]
+        });
+
+        mock.clear();
+    })
 }
 
 export function fireEvent(type: string, data: object, interval = 0) {

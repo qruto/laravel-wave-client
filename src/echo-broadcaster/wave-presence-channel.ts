@@ -3,15 +3,18 @@ import request from '../util/request';
 import { PresenceChannel } from 'laravel-echo';
 
 import WavePrivateChannel from './wave-private-channel';
+import { AuthRequest, authRequest } from '../channel-auth';
 
 export default class WavePresenceChannel extends WavePrivateChannel implements PresenceChannel {
-    private onJoinCallback: Function;
+    private joined = false;
+    private joinRequest: AuthRequest;
 
     constructor(connection, name, options) {
         super(connection, name, options);
 
         // TODO: custom route
-        request(connection).post('presence-channel-users', { channel: name }).then((users) => this.onJoinCallback(users));
+        this.joinRequest = authRequest(name, connection, 'presence-channel-users')
+            .after(() => this.joined = true);
 
         if (window) {
             window.addEventListener('beforeunload', () => this.unsubscribe());
@@ -19,7 +22,15 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
     }
 
     public here(callback: Function): WavePresenceChannel {
-        this.onJoinCallback = callback;
+        if (this.joined) {
+            request(this.connection)
+                .get('presence-channel-users', { channel: this.name })
+                .then((users) => callback(users));
+
+            return this;
+        }
+
+        this.joinRequest.after((users) => callback(users))
 
         return this;
     }
@@ -43,7 +54,9 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
     }
 
     public unsubscribe(): void {
-        request(this.connection).delete('presence-channel-users', { channel: this.name });
-        super.unsubscribe();
+        this.joinRequest.after(() => {
+            request(this.connection).delete('presence-channel-users', { channel: this.name });
+            super.unsubscribe()
+        });
     }
 }

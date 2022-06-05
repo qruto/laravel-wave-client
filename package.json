@@ -31,6 +31,7 @@
     "@typescript-eslint/parser": "^5.14.0",
     "eslint": "^8.11.0",
     "jest": "^28.1.0",
+    "mocksse": "^1.0.4",
     "rollup": "^2.75.5",
     "rollup-plugin-typescript2": "^0.32.0",
     "standard-version": "^9.3.2",

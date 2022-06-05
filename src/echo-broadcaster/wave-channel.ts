@@ -1,5 +1,5 @@
 import { Channel } from "laravel-echo";
-import { EventFormatter } from 'laravel-echo/src/util/event-formatter';
+import { EventFormatter } from '../echo/event-formatter';
 
 import { EventSourceConnection } from '../EventSourceConnection';
 

@@ -14,7 +14,7 @@ export default function request(connection: EventSourceConnection) {
             return response.headers.get('content-type') === 'application/json' ? response.json() : response;
         });
 
-        return connection.source.readyState !== EventSource.OPEN ? new Promise((resolve) => {
+        return typeof connection.getId() === 'undefined' ? new Promise((resolve) => {
             connection.afterConnect((connectionId) => {
                 resolve(fetchRequest(connectionId));
             });

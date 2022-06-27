@@ -1,4 +1,5 @@
 import babel from '@rollup/plugin-babel';
+import resolve from '@rollup/plugin-node-resolve';
 import typescript from 'rollup-plugin-typescript2';
 
 export default {
@@ -6,9 +7,10 @@ export default {
     output: [
         { file: './dist/wave.js', format: 'esm' },
         { file: './dist/wave.common.js', format: 'cjs' },
-        { file: './dist/wave.iife.js', format: 'iife', name: 'Echo' },
+        { file: './dist/wave.iife.js', format: 'iife', name: 'Wave' },
     ],
     plugins: [
+        resolve(),
         typescript(),
         babel({
             babelHelpers: 'bundled',

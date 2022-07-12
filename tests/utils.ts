@@ -28,6 +28,10 @@ export function mockEventSource() {
     })
 }
 
+export function sendNotification(model: string, type: string, data: object) {
+    fireEvent(`private-${model}.Illuminate\\Notifications\\Events\\BroadcastNotificationCreated`, { type, ...data });
+}
+
 export function fireEvent(type: string, data: object, interval = 0) {
   new MockEvent({
     url: '/wave',

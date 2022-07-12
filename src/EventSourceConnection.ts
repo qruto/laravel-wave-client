@@ -4,23 +4,32 @@ export class EventSourceConnection {
 
     protected listeners: Record<string, Map<Function, EventListener>> = {};
     protected afterConnectCallbacks: ((connectionId) => void)[] = [];
+    protected reconnecting = false;
 
     public create() {
         //TODO: dynamic route
         this.source = new EventSource('/wave')
         this.source.addEventListener('connected', (event: any) => {
             this.id = event.data;
-            this.afterConnectCallbacks.forEach(callback => callback(this.id));
+
+            if (!this.reconnecting) {
+                this.afterConnectCallbacks.forEach(callback => callback(this.id));
+            }
+
+            this.reconnecting = false;
+
+            console.log('Wave connected.');
         });
 
         this.source.addEventListener('error', (event: any) => {
             switch (event.target.readyState) {
                 case EventSource.CONNECTING:
-                    // TODO: implement
+                    this.reconnecting = true;
                     console.log('Wave reconnecting...');
                     break;
 
                 case EventSource.CLOSED:
+                    console.log('Wave connection closed');
                     this.create();
                     this.resubscribe();
                     break;

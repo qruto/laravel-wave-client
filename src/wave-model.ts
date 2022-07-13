@@ -18,9 +18,9 @@ const authMethods = [
 ] as const;
 
 export class WaveModel {
-    public id: string;
+    public name: string;
+    public key: string;
     protected connection: EventSourceConnection;
-    protected modelClass: string;
     protected channel: string;
     protected auth: AuthRequest;
     private callbackMap: Map<Function, Function> = new Map();
@@ -28,19 +28,17 @@ export class WaveModel {
     private options: Options;
 
     constructor(
-        id: string,
+        name: string,
+        key: string,
         connection: EventSourceConnection,
         options: Options
     ) {
-        this.id = id;
+        this.name = name;
+        this.key = key;
         this.connection = connection;
         this.options = options;
 
-        const parts = id.split('.');
-
-        this.modelClass = parts[0];
-
-        const channelName = `${this.options.namespace}.${this.id}`;
+        const channelName = `${this.options.namespace}.${this.name}.${this.key}`;
 
         this.auth = authRequest(channelName, connection, this.options.authEndpoint);
 
@@ -81,7 +79,9 @@ export class WaveModel {
         };
 
         this.callbackMap.set(callback, listener);
-        this.connection.subscribe(`${this.channel}.${this.modelClass}${eventName}`, listener);
+        const modelClass = this.name.split('.').pop();
+        console.log(`${this.channel}.${modelClass}${eventName}`);
+        this.connection.subscribe(`${this.channel}.${modelClass}${eventName}`, listener);
 
         return this;
     }
@@ -109,7 +109,8 @@ export class WaveModel {
     public stopListening(event: string, callback: Function): WaveModel {
         const eventName = event[0].toUpperCase() + event.slice(1);
 
-        this.connection.removeListener(`${this.channel}.${this.modelClass}${eventName}`, this.callbackMap.get(callback));
+        const modelClass = this.name.split('.').pop();
+        this.connection.removeListener(`${this.channel}.${modelClass}${eventName}`, this.callbackMap.get(callback));
 
         return this;
     }

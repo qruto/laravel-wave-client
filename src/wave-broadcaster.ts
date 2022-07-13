@@ -25,12 +25,14 @@ export class Wave {
         this.connection.create(this.options.endpoint);
     }
 
-    public model(model: string) {
-        if (!this.models[model]) {
+    public model(model: string, key: string) {
+        const index = `${model}.${String(key)}`;
+
+        if (!this.models[index]) {
             const { authEndpoint, namespace } = this.options;
-            this.models[model] = new WaveModel(model, this.connection, { authEndpoint, namespace });
+            this.models[index] = new WaveModel(model, key, this.connection, { authEndpoint, namespace });
         }
 
-        return this.models[model];
+        return this.models[index];
     }
 }

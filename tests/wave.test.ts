@@ -97,4 +97,26 @@ test('model updated event', (done) => {
     setTimeout(() => {
         done();
     }, 100);
-})
+});
+
+test('different model updated event on same model', (done) => {
+    expect.assertions(2);
+
+    wave.model('User', '1')
+        .updated(function (model) {
+            expect(model).toEqual({ name: 'John' });
+        }).updated('Team', function (model) {
+            expect(model).toEqual({ name: 'John' });
+        });
+
+
+    fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
+    fireEvent('private-App.Models.User.1.TeamUpdated', { model: { name: 'John' } });
+
+    setTimeout(() => {
+        done();
+    }, 100);
+});
+
+// TODO: test several listeners
+// TODO:  test remove listener

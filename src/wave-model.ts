@@ -71,39 +71,74 @@ export class WaveModel {
         return eventHandlerProxy;
     }
 
-    protected listenEvent(event: string, callback: Function): WaveModel {
-        const eventName = event[0].toUpperCase() + event.slice(1);
+    protected listenEvent(event: string, callback: Function): WaveModel;
+    protected listenEvent(model: string, event: string, callback: Function): WaveModel;
+    protected listenEvent(model: string, event: string|Function, callback?: Function): WaveModel {
+        const eventName = typeof event === 'string'
+                ? event[0].toUpperCase() + event.slice(1)
+                : model[0].toUpperCase() + model.slice(1);
 
         const listener = (data: { model: object }) => {
-            callback(data.model);
+            typeof event === 'function' ? event(data.model) : callback(data.model);
         };
 
-        this.callbackMap.set(callback, listener);
-        const modelClass = this.name.split('.').pop();
-        console.log(`${this.channel}.${modelClass}${eventName}`);
+        this.callbackMap.set(typeof event === 'string' ? callback : event, listener);
+
+        const modelClass = typeof event === 'string' ? model : this.name.split('.').pop();
+
         this.connection.subscribe(`${this.channel}.${modelClass}${eventName}`, listener);
 
         return this;
     }
 
-    public created(callback: Function): WaveModel {
-        return this.listenEvent('created', callback);
+    public created(callback: Function): WaveModel;
+    public created(model: string, callback: Function): WaveModel;
+    public created(model: string|Function, callback?: Function): WaveModel {
+        if (typeof model === 'function') {
+            return this.listenEvent('created', model);
+        }
+
+        return this.listenEvent(model, 'created', callback);
     }
 
-    public updated(callback: Function): WaveModel {
-        return this.listenEvent('updated', callback);
+    public updated(callback: Function): WaveModel;
+    public updated(model: string, callback: Function): WaveModel;
+    public updated(model: string|Function, callback?: Function): WaveModel {
+        if (typeof model === 'function') {
+            return this.listenEvent('updated', model);
+        }
+
+        return this.listenEvent(model, 'updated', callback);
     }
 
-    public deleted(callback: Function): WaveModel {
-        return this.listenEvent('deleted', callback);
+    public deleted(callback: Function): WaveModel;
+    public deleted(model: string, callback: Function): WaveModel;
+    public deleted(model: string|Function, callback?: Function): WaveModel {
+        if (typeof model === 'function') {
+            return this.listenEvent('deleted', model);
+        }
+
+        return this.listenEvent(model, 'deleted', callback);
     }
 
-    public restored(callback: Function): WaveModel {
-        return this.listenEvent('restored', callback);
+    public restored(callback: Function): WaveModel;
+    public restored(model: string, callback: Function): WaveModel;
+    public restored(model: string|Function, callback?: Function): WaveModel {
+        if (typeof model === 'function') {
+            return this.listenEvent('restored', model);
+        }
+
+        return this.listenEvent(model, 'restored', callback);
     }
 
-    public trashed(callback: Function): WaveModel {
-        return this.listenEvent('trashed', callback);
+    public trashed(callback: Function): WaveModel;
+    public trashed(model: string, callback: Function): WaveModel;
+    public trashed(model: string|Function, callback?: Function): WaveModel {
+        if (typeof model === 'function') {
+            return this.listenEvent('trashed', model);
+        }
+
+        return this.listenEvent(model, 'trashed', callback);
     }
 
     public stopListening(event: string, callback: Function): WaveModel {

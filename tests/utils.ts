@@ -11,7 +11,7 @@ export function mockEventSource() {
         new MockEvent({
             url: '/wave',
             responses: [
-                { type: 'connected', data: 'some-randmom-key'},
+                { type: 'connected', data: 'some-random-key'},
             ]
         })
     });

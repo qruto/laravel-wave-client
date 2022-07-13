@@ -11,11 +11,11 @@ test('create event source connection', () => {
   new MockEvent({
     url: '/wave',
     responses: [
-      { type: 'connected', data: 'some-randmom-key'},
+      { type: 'connected', data: 'some-random-key'},
     ]
   })
 
-  connection.afterConnect((connectionId) => expect(connectionId).toBe('some-randmom-key'));
+  connection.afterConnect((connectionId) => expect(connectionId).toBe('some-random-key'));
   connection.create('/wave');
 });
 
@@ -27,7 +27,7 @@ test('channel subscription', () => {
   connection.subscribe('some-event', (data) => expect(data).toEqual({ foo: 'bar' }));
 });
 
-test('some-event unsubsribe', (done) => {
+test('some-event unsubscribe', (done) => {
   const listener = jest.fn();
 
   connection.create('/wave');

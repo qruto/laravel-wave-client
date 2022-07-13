@@ -17,8 +17,7 @@ export default class WavePrivateChannel extends WaveChannel {
     }
 
     public whisper(eventName, data) {
-        // TODO: configurable route
-        request(this.connection).post('wave/whisper', { channel_name: this.name, event_name: eventName, data });
+        request(this.connection).post(this.options.endpoint + '/whisper', { channel_name: this.name, event_name: eventName, data });
 
         return this;
     }

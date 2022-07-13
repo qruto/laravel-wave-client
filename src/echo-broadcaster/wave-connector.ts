@@ -11,9 +11,13 @@ export class WaveConnector extends Connector {
 
     private channels: Record<string, WaveChannel | WavePresenceChannel> = {};
 
+    constructor(options: any) {
+        super({ endpoint: '/wave', ...options });
+    }
+
     connect() {
         this.connection = new EventSourceConnection();
-        this.connection.create();
+        this.connection.create(this.options.endpoint);
     }
 
     public channel(channel: string): WaveChannel {

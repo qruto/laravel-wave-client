@@ -1,6 +1,11 @@
 import { EventSourceConnection } from "./EventSourceConnection";
 import { authRequest, AuthRequest } from "./channel-auth";
 
+interface Options {
+    namespace: string,
+    authEndpoint:string,
+}
+
 const authMethods = [
     'created',
     'updated',
@@ -16,25 +21,30 @@ export class WaveModel {
     public id: string;
     protected connection: EventSourceConnection;
     protected modelClass: string;
-    protected channelPrefix: string;
+    protected channel: string;
     protected auth: AuthRequest;
     private callbackMap: Map<Function, Function> = new Map();
     private notificationCallbacks: Record<string, Set<Function>> = {};
+    private options: Options;
 
     constructor(
         id: string,
-        connection: EventSourceConnection
+        connection: EventSourceConnection,
+        options: Options
     ) {
         this.id = id;
         this.connection = connection;
+        this.options = options;
 
         const parts = id.split('.');
 
-        this.modelClass = parts[parts.length-2];
+        this.modelClass = parts[0];
 
-        this.auth = authRequest(id, connection);
+        const channelName = `${this.options.namespace}.${this.id}`;
 
-        this.channelPrefix = `private-${this.id}`;
+        this.auth = authRequest(channelName, connection, this.options.authEndpoint);
+
+        this.channel = `private-${channelName}`;
 
         const eventHandlerProxy = new Proxy(this, {
             get: (target, prop: typeof authMethods[number], receiver) => {
@@ -58,7 +68,7 @@ export class WaveModel {
             }
         }
 
-        this.connection.subscribe(`${this.channelPrefix}.Illuminate\\Notifications\\Events\\BroadcastNotificationCreated`, notificationsListener);
+        this.connection.subscribe(`${this.channel}.Illuminate\\Notifications\\Events\\BroadcastNotificationCreated`, notificationsListener);
 
         return eventHandlerProxy;
     }
@@ -71,7 +81,7 @@ export class WaveModel {
         };
 
         this.callbackMap.set(callback, listener);
-        this.connection.subscribe(`${this.channelPrefix}.${this.modelClass}${eventName}`, listener);
+        this.connection.subscribe(`${this.channel}.${this.modelClass}${eventName}`, listener);
 
         return this;
     }
@@ -99,7 +109,7 @@ export class WaveModel {
     public stopListening(event: string, callback: Function): WaveModel {
         const eventName = event[0].toUpperCase() + event.slice(1);
 
-        this.connection.removeListener(`${this.channelPrefix}.${this.modelClass}${eventName}`, this.callbackMap.get(callback));
+        this.connection.removeListener(`${this.channel}.${this.modelClass}${eventName}`, this.callbackMap.get(callback));
 
         return this;
     }

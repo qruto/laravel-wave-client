@@ -33,6 +33,7 @@
     "eslint": "^8.11.0",
     "jest": "^28.1.0",
     "mocksse": "^1.0.4",
+    "node-ray": "^1.18.0",
     "rollup": "^2.75.5",
     "rollup-plugin-typescript2": "^0.32.0",
     "standard-version": "^9.3.2",

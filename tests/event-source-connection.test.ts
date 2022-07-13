@@ -16,13 +16,13 @@ test('create event source connection', () => {
   })
 
   connection.afterConnect((connectionId) => expect(connectionId).toBe('some-randmom-key'));
-  connection.create();
+  connection.create('/wave');
 });
 
 test('channel subscription', () => {
   fireEvent('channel', { foo: 'bar' });
 
-  connection.create();
+  connection.create('/wave');
 
   connection.subscribe('some-event', (data) => expect(data).toEqual({ foo: 'bar' }));
 });
@@ -30,7 +30,7 @@ test('channel subscription', () => {
 test('some-event unsubsribe', (done) => {
   const listener = jest.fn();
 
-  connection.create();
+  connection.create('/wave');
 
   connection.subscribe('some-event', listener);
 
@@ -47,7 +47,7 @@ test('some-event unsubsribe', (done) => {
 test('some-event remove listener', (done) => {
   const listener = jest.fn();
 
-  connection.create();
+  connection.create('/wave');
 
   connection.subscribe('some-event', listener);
 

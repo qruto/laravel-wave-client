@@ -12,8 +12,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
     constructor(connection, name, options) {
         super(connection, name, options);
 
-        // TODO: custom route
-        this.joinRequest = authRequest(name, connection, 'wave/presence-channel-users')
+        this.joinRequest = authRequest(name, connection, this.options.endpoint + '/presence-channel-users')
             .after(() => this.joined = true);
 
         if (window) {
@@ -24,7 +23,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
     public here(callback: Function): WavePresenceChannel {
         if (this.joined) {
             request(this.connection)
-                .get('wave/presence-channel-users', { channel_name: this.name })
+                .get(this.options.endpoint + '/presence-channel-users', { channel_name: this.name })
                 .then((users) => callback(users));
 
             return this;
@@ -55,7 +54,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
 
     public unsubscribe(): void {
         this.joinRequest.after(() => {
-            request(this.connection).delete('wave/presence-channel-users', { channel_name: this.name });
+            request(this.connection).delete(this.options.endpoint + '/presence-channel-users', { channel_name: this.name });
             super.unsubscribe();
         });
     }

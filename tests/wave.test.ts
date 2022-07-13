@@ -33,7 +33,7 @@ beforeAll(() => {
 test('notification listener', (done) => {
     expect.assertions(1);
 
-    wave.model('App.Models.User.1')
+    wave.model('User.1')
         .notification('App\\Notifications\\NewMessage', function (data) {
             expect(data).toMatchObject({ text: 'foo' });
         });
@@ -48,12 +48,12 @@ test('notification listener', (done) => {
 test('several notification listeners', (done) => {
     expect.assertions(2);
 
-    wave.model('App.Models.User.1')
+    wave.model('User.1')
         .notification('App\\Notifications\\NewMessage', function (data) {
             expect(data).toMatchObject({ text: 'foo' });
         });
 
-    wave.model('App.Models.User.1')
+    wave.model('User.1')
         .notification('App\\Notifications\\NewMessage', function (data) {
             expect(data).toMatchObject({ text: 'foo' });
         });
@@ -70,10 +70,10 @@ test('remove notification listener', (done) => {
 
     const listener = jest.fn();
 
-    wave.model('App.Models.User.1')
+    wave.model('User.1')
         .notification('App\\Notifications\\NewMessage', listener);
 
-    wave.model('App.Models.User.1').stopListeningNotification('App\\Notifications\\NewMessage', listener);
+    wave.model('User.1').stopListeningNotification('App\\Notifications\\NewMessage', listener);
 
     sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' });
 
@@ -86,7 +86,7 @@ test('remove notification listener', (done) => {
 test('model updated event', (done) => {
     expect.assertions(1);
 
-    wave.model('App.Models.User.1')
+    wave.model('User.1')
         .updated(function (model) {
             expect(model).toEqual({ name: 'John' });
         });

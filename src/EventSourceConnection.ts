@@ -6,9 +6,8 @@ export class EventSourceConnection {
     protected afterConnectCallbacks: ((connectionId) => void)[] = [];
     protected reconnecting = false;
 
-    public create() {
-        //TODO: dynamic route
-        this.source = new EventSource('/wave')
+    public create(endpoint: string) {
+        this.source = new EventSource(endpoint);
         this.source.addEventListener('connected', (event: any) => {
             this.id = event.data;
 
@@ -30,7 +29,7 @@ export class EventSourceConnection {
 
                 case EventSource.CLOSED:
                     console.log('Wave connection closed');
-                    this.create();
+                    this.create(endpoint);
                     this.resubscribe();
                     break;
             }

@@ -7,7 +7,6 @@ export interface AuthRequest {
     response: Promise<void>;
 }
 
-// TODO: configurable auth route
 export function authRequest(channel: string, connection: EventSourceConnection, authEndpoint = '/broadcasting/auth'): AuthRequest {
     let authorized = false;
     let afterAuthCallbacks: Function[] = [];

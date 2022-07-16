@@ -84,7 +84,7 @@ export class WaveModel {
 
         this.callbackMap.set(typeof event === 'string' ? callback : event, listener);
 
-        const modelClass = typeof event === 'string' ? model : this.name.split('.').pop();
+        const modelClass = typeof event === 'string' ? model : this.name;
 
         this.connection.subscribe(`${this.channel}.${modelClass}${eventName}`, listener);
 
@@ -141,11 +141,13 @@ export class WaveModel {
         return this.listenEvent(model, 'trashed', callback);
     }
 
-    public stopListening(event: string, callback: Function): WaveModel {
-        const eventName = event[0].toUpperCase() + event.slice(1);
+    public stopListening(event: string, callback: Function): WaveModel;
+    public stopListening(model: string, event: string, callback: Function): WaveModel;
+    public stopListening(model: string, event: string|Function, callback?: Function): WaveModel {
+        const eventName = typeof event !== 'function' ? event[0].toUpperCase() + event.slice(1) : model[0].toUpperCase() + model.slice(1);
 
-        const modelClass = this.name.split('.').pop();
-        this.connection.removeListener(`${this.channel}.${modelClass}${eventName}`, this.callbackMap.get(callback));
+        const modelClass = typeof event === 'function' ? this.name : model;
+        this.connection.removeListener(`${this.channel}.${modelClass}${eventName}`, this.callbackMap.get(typeof event === 'function' ? event : callback));
 
         return this;
     }

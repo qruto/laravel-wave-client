@@ -15,7 +15,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
         this.joinRequest = authRequest(name, connection, this.options.endpoint + '/presence-channel-users')
             .after(() => this.joined = true);
 
-        if (window) {
+        if (typeof window !== 'undefined') {
             window.addEventListener('beforeunload', () => this.unsubscribe());
         }
     }

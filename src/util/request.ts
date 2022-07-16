@@ -2,8 +2,11 @@ import { EventSourceConnection } from "../EventSourceConnection";
 
 export default function request(connection: EventSourceConnection) {
     function create(method: 'GET' | 'POST' | 'PUT' | 'DELETE', route: string, data?: object): Promise<Response> {
-        const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
-        const csrfToken = match ? decodeURIComponent(match[3]) : null;
+        let csrfToken = null;
+        if (typeof document !== 'undefined') {
+            const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+            csrfToken = match ? decodeURIComponent(match[3]) : null;
+        }
 
         const fetchRequest = (connectionId) => fetch(route, {
             method: method,

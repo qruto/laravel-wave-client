@@ -3,11 +3,7 @@ import { Wave } from "../src/wave";
 
 mockEventSource();
 
-let wave: null | Wave = null;
-
-afterEach(() => {
-    wave = null;
-});
+let wave: Wave;
 
 beforeEach(() => {
     wave = new Wave();
@@ -17,15 +13,22 @@ beforeAll(() => {
     const headers = new Map();
     headers.set('content-type', 'application/json');
 
-    global.fetch = jest.fn(() => Promise.resolve({
+    global.fetch = jest.fn().mockImplementation(() => Promise.resolve({
         headers,
         json: () => Promise.resolve(['user1', 'user2']),
-    })) as jest.Mock;
+    }));
 
     Object.defineProperty(global, 'window', {
         writable: true,
         value: {
             'addEventListener': jest.fn().mockImplementation(event => event),
+        }
+    });
+
+    Object.defineProperty(global, 'document', {
+        writable: true,
+        value: {
+            'cookie': 'XSRF-TOKEN=some-random-token',
         }
     });
 })
@@ -40,9 +43,7 @@ test('notification listener', (done) => {
 
     sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' });
 
-    setTimeout(() => {
-        done();
-    }, 100);
+    postponeDone(done);
 });
 
 test('several notification listeners', (done) => {
@@ -60,9 +61,7 @@ test('several notification listeners', (done) => {
 
     sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' });
 
-    setTimeout(() => {
-        done();
-    }, 100);
+    postponeDone(done);
 });
 
 test('remove notification listener', (done) => {
@@ -77,10 +76,7 @@ test('remove notification listener', (done) => {
 
     sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' });
 
-    setTimeout(() => {
-        expect(listener).not.toHaveBeenCalled();
-        done();
-    }, 100);
+    postponeDone(done, () => expect(listener).not.toHaveBeenCalled());
 });
 
 test('model updated event', (done) => {
@@ -94,9 +90,7 @@ test('model updated event', (done) => {
 
     fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
 
-    setTimeout(() => {
-        done();
-    }, 100);
+    postponeDone(done);
 });
 
 test('different model updated event on same model', (done) => {
@@ -109,14 +103,64 @@ test('different model updated event on same model', (done) => {
             expect(model).toEqual({ name: 'John' });
         });
 
+    fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
+    fireEvent('private-App.Models.User.1.TeamUpdated', { model: { name: 'John' } });
+
+    postponeDone(done);
+});
+
+test('several listeners', (done) => {
+    expect.assertions(2);
+
+    wave.model('User', '1')
+        .updated(function (model) {
+            expect(model).toEqual({ name: 'John' });
+        })
+
+    wave.model('User', '1')
+        .updated(function (model) {
+            expect(model).toEqual({ name: 'John' });
+        });
+
+    fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
+
+    postponeDone(done);
+});
+
+test('remove listener', (done) => {
+    expect.assertions(3);
+
+    const listener1 = jest.fn();
+    const listener2 = jest.fn();
+    const listener3 = jest.fn();
+
+    wave.model('User', '1')
+        .updated(listener1);
+
+    wave.model('User', '1')
+        .updated(listener2)
+        .updated('Team', listener3);
+
+    wave.model('User', '1')
+        .stopListening('updated', listener1)
+        .stopListening('Team', 'updated', listener3);
 
     fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
     fireEvent('private-App.Models.User.1.TeamUpdated', { model: { name: 'John' } });
 
-    setTimeout(() => {
-        done();
-    }, 100);
+    postponeDone(done, () => {
+        expect(listener1).not.toBeCalled();
+        expect(listener2).toBeCalled();
+        expect(listener3).not.toBeCalled();
+    });
 });
 
-// TODO: test several listeners
-// TODO:  test remove listener
+function postponeDone(done: Function, callback?: Function) {
+   setTimeout(() => {
+        if (callback) {
+            callback();
+        }
+
+        done();
+    }, 10);
+}

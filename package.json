@@ -1,7 +1,7 @@
 {
   "name": "laravel-wave",
-  "version": "1.0.0",
-  "description": "SSE connect for Laravel applications",
+  "version": "0.5.0",
+  "description": "Event Source adapter for Laravel broadcasting system",
   "scripts": {
     "build": "npm run compile && npm run declarations",
     "compile": "./node_modules/.bin/rollup -c",

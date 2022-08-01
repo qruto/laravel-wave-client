@@ -6,7 +6,7 @@
     </picture>
 </p>
 
-<p align="center"><em>Bring <strong>live</strong> to your application</em></p>
+<p align="center">Bring <strong>live</strong> to your application</p>
 
 <p align="center">
     <a href="https://github.com/qruto/laravel-wave-js/actions/workflows/tests.yml"><img src="https://github.com/qruto/laravel-wave/actions/workflows/tests.yml/badge.svg" alt="Build Status"></a>

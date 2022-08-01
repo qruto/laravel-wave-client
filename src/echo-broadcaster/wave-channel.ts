@@ -90,6 +90,6 @@ export default class WaveChannel extends Channel {
     }
 
     error(callback: Function): WaveChannel {
-        return this;
+        return callback();
     }
 }

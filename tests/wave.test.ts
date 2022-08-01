@@ -162,5 +162,5 @@ function postponeDone(done: Function, callback?: Function) {
         }
 
         done();
-    }, 10);
+    }, 100);
 }

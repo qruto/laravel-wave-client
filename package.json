@@ -1,7 +1,20 @@
 {
   "name": "laravel-wave",
   "version": "0.5.0",
-  "description": "Event Source adapter for Laravel broadcasting system",
+  "description": "Event Source adapter for Laravel broadcasting system.",
+  "keywords": [
+    "laravel",
+    "sse",
+    "event source",
+    "broadcasting",
+    "real-time",
+    "live-update"
+  ],
+  "homepage": "https://github.com/qruto/laravel-wave-js",
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/qruto/laravel-wave-js"
+  },
   "scripts": {
     "build": "npm run compile && npm run declarations",
     "compile": "./node_modules/.bin/rollup -c",

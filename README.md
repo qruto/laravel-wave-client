@@ -15,6 +15,14 @@
     <a href="https://www.npmjs.com/package/laravel-wave"><img src="https://img.shields.io/npm/v/laravel-wave" alt="Latest Stable Version"></a>
 </p>
 
+<p align="center">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/qruto/laravel-wave/raw/HEAD/art/connection-demo-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="https://github.com/qruto/laravel-wave/raw/HEAD/art/connection-demo-light.png">
+        <img alt="Laravel Wave Logo" src="https://github.com/qruto/laravel-wave/raw/HEAD/art/connection-demo-light.png" width="400">
+    </picture>
+</p>
+
 # Introduction
 
 Use Laravel [broadcasting system](https://laravel.com/docs/master/broadcasting) for sending events from server to client with 🗼 [**Server-sent Events**](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).

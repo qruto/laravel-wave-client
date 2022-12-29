@@ -12,8 +12,8 @@
   ],
   "homepage": "https://github.com/qruto/laravel-wave-js",
   "repository": {
-      "type": "git",
-      "url": "https://github.com/qruto/laravel-wave-js"
+    "type": "git",
+    "url": "https://github.com/qruto/laravel-wave-js"
   },
   "scripts": {
     "build": "npm run compile && npm run declarations",
@@ -40,7 +40,7 @@
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@types/jest": "^28.1.0",
-    "@types/node": "^17.0.21",
+    "@types/node": "^18.11.18",
     "@typescript-eslint/eslint-plugin": "^5.14.0",
     "@typescript-eslint/parser": "^5.14.0",
     "eslint": "^8.11.0",

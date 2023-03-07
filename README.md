@@ -1,11 +1,22 @@
 <p align="center">
     <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/qruto/laravel-wave/raw/HEAD/art/logo-dark.svg">
-        <source media="(prefers-color-scheme: light)" srcset="https://github.com/qruto/laravel-wave/raw/HEAD/art/logo-light.svg">
-        <img alt="Laravel Wave Logo" src="https://github.com/qruto/laravel-wave/raw/HEAD/art/logo-light.svg" width="400">
+        <source 
+            width="350" 
+            media="(prefers-color-scheme: dark)"
+            srcset="https://github.com/qruto/laravel-wave/raw/HEAD/art/logo-dark.png"
+        >
+        <source
+            width="350"
+            media="(prefers-color-scheme: light)"
+            srcset="https://github.com/qruto/laravel-wave/raw/HEAD/art/logo-light.png"
+        >
+        <img
+            alt="Laravel Wave Logo"
+            src="https://github.com/qruto/laravel-wave/raw/HEAD/art/logo-light.png"
+            width="350"
+        >
     </picture>
 </p>
-
 <p align="center">Bring <strong>live</strong> to your application</p>
 
 <p align="center">

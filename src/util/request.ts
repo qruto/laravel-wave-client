@@ -1,13 +1,14 @@
 import { EventSourceConnection } from "../EventSourceConnection";
 
 export default function request(connection: EventSourceConnection) {
-    function create(method: 'GET' | 'POST' | 'PUT' | 'DELETE', route: string, data?: object): Promise<Response> {
+    function create(method: 'GET' | 'POST' | 'PUT' | 'DELETE', route: string, data?: object, options?: any): Promise<Response> {
         let csrfToken = null;
         if (typeof document !== 'undefined') {
             const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
             csrfToken = match ? decodeURIComponent(match[3]) : null;
         }
 
+        const tokenBearer = options.bearerToken ? {'Authorization': 'Bearer '+options.bearerToken} : {}
         const fetchRequest = (connectionId) => fetch(route, {
             method: method,
             headers: {
@@ -15,6 +16,8 @@ export default function request(connection: EventSourceConnection) {
                 'Accept': 'application/json',
                 'X-Socket-Id': connectionId,
                 'X-XSRF-TOKEN': csrfToken,
+                ...options?.auth?.headers,
+                ...tokenBearer
             },
             body: JSON.stringify(data || {}),
         }).then((response) => {
@@ -28,7 +31,7 @@ export default function request(connection: EventSourceConnection) {
         }) : fetchRequest(connection.getId());
     }
 
-    const factory = (method: 'GET' | 'POST' | 'PUT' | 'DELETE') => (route: string, data?: object) => create(method, route, data);
+    const factory = (method: 'GET' | 'POST' | 'PUT' | 'DELETE') => (route: string, data?: object, options?: any) => create(method, route, data, options);
 
     return {
         get: factory('GET'),

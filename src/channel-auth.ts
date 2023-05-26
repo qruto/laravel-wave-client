@@ -7,7 +7,7 @@ export interface AuthRequest {
     response: Promise<void>;
 }
 
-export function authRequest(channel: string, connection: EventSourceConnection, authEndpoint = '/broadcasting/auth'): AuthRequest {
+export function authRequest(channel: string, connection: EventSourceConnection, options: any): AuthRequest {
     let authorized = false;
     let afterAuthCallbacks: Function[] = [];
 
@@ -23,7 +23,7 @@ export function authRequest(channel: string, connection: EventSourceConnection, 
         return this;
     }
 
-    const response = request(connection).post(authEndpoint, { channel_name: channel }).then((response) => {
+    const response = request(connection).post(options.authEndpoint, { channel_name: channel }, options).then((response) => {
         authorized = true;
 
         afterAuthCallbacks.forEach((callback) => callback(response));

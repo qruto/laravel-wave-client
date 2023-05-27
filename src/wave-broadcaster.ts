@@ -10,6 +10,7 @@ export class Wave {
 
     private options: Options = {
         endpoint: '/wave',
+        withCredentials: false,
         auth: {
             headers: {},
         },
@@ -22,7 +23,7 @@ export class Wave {
     constructor(options?: Options) {
         this.options = { ...this.options, ...options };
         this.connection = new EventSourceConnection();
-        this.connection.create(this.options.endpoint);
+        this.connection.create(this.options.endpoint, this.options.withCredentials);
     }
 
     public model(model: string, key: string) {

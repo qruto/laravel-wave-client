@@ -1,6 +1,8 @@
 # Changelog
 
-## [Unreleased](https://github.com/qruto/laravel-wave-js/compare/v0.6.0...main)
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### 0.5.2 (2023-05-27)
 
 ## 0.5.1 - 2022-08-02
 

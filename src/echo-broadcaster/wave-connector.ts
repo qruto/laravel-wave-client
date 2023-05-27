@@ -6,12 +6,23 @@ import WaveChannel from './wave-channel';
 import WavePrivateChannel from './wave-private-channel';
 import WavePresenceChannel from './wave-presence-channel';
 
+export interface Options {
+    endpoint: string,
+    auth: {
+        headers: Record<string, string>,
+    },
+    authEndpoint: string,
+    csrfToken?: string,
+    bearerToken?: string,
+    namespace: string,
+}
+
 export class WaveConnector extends Connector {
     private connection: EventSourceConnection;
 
     private channels: Record<string, WaveChannel | WavePresenceChannel> = {};
 
-    constructor(options: any) {
+    constructor(options: Options) {
         super({ endpoint: '/wave', ...options });
     }
 

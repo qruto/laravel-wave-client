@@ -1,12 +1,7 @@
 import { EventSourceConnection } from "./EventSourceConnection";
 
 import { WaveModel } from "./wave-model";
-
-interface Options {
-    endpoint: string;
-    authEndpoint: string;
-    namespace: string;
-}
+import { Options } from './echo-broadcaster/wave-connector';
 
 export class Wave {
     protected connection: EventSourceConnection;
@@ -15,7 +10,12 @@ export class Wave {
 
     private options: Options = {
         endpoint: '/wave',
+        auth: {
+            headers: {},
+        },
         authEndpoint: '/broadcasting/auth',
+        csrfToken: null,
+        bearerToken: null,
         namespace: 'App.Models',
     }
 
@@ -29,8 +29,7 @@ export class Wave {
         const index = `${model}.${String(key)}`;
 
         if (!this.models[index]) {
-            const { authEndpoint, namespace } = this.options;
-            this.models[index] = new WaveModel(model, key, this.connection, { authEndpoint, namespace });
+            this.models[index] = new WaveModel(model, key, this.connection, this.options);
         }
 
         return this.models[index];

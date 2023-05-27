@@ -1,10 +1,6 @@
 import { EventSourceConnection } from "./EventSourceConnection";
 import { authRequest, AuthRequest } from "./channel-auth";
-
-interface Options {
-    namespace: string,
-    authEndpoint:string,
-}
+import { Options } from './echo-broadcaster/wave-connector';
 
 const authMethods = [
     'created',
@@ -40,7 +36,7 @@ export class WaveModel {
 
         const channelName = `${this.options.namespace}.${this.name}.${this.key}`;
 
-        this.auth = authRequest(channelName, connection, this.options.authEndpoint);
+        this.auth = authRequest(channelName, connection, this.options);
 
         this.channel = `private-${channelName}`;
 

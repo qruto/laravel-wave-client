@@ -1,13 +1,14 @@
 import request from "./util/request";
 
 import { EventSourceConnection } from "./EventSourceConnection";
+import { Options } from './echo-broadcaster/wave-connector';
 
 export interface AuthRequest {
     after: (callback: Function) => AuthRequest;
     response: Promise<void>;
 }
 
-export function authRequest(channel: string, connection: EventSourceConnection, options: any): AuthRequest {
+export function authRequest(channel: string, connection: EventSourceConnection, options: Options): AuthRequest {
     let authorized = false;
     let afterAuthCallbacks: Function[] = [];
 
@@ -23,7 +24,7 @@ export function authRequest(channel: string, connection: EventSourceConnection, 
         return this;
     }
 
-    const response = request(connection).post(options.authEndpoint, { channel_name: channel }, options).then((response) => {
+    const response = request(connection).post(options.authEndpoint, options, { channel_name: channel }).then((response) => {
         authorized = true;
 
         afterAuthCallbacks.forEach((callback) => callback(response));

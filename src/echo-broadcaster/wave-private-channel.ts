@@ -2,7 +2,6 @@ import request from '../util/request';
 import { AuthRequest, authRequest } from '../channel-auth';
 
 import WaveChannel from './wave-channel';
-import { Channel } from 'laravel-echo';
 
 export default class WavePrivateChannel extends WaveChannel {
     protected authorized = false;
@@ -20,7 +19,7 @@ export default class WavePrivateChannel extends WaveChannel {
     }
 
     public whisper(eventName, data) {
-        request(this.connection).post(this.options.endpoint + '/whisper', { channel_name: this.name, event_name: eventName, data }, this.options);
+        request(this.connection).post(this.options.endpoint + '/whisper', this.options, { channel_name: this.name, event_name: eventName, data });
 
         return this;
     }

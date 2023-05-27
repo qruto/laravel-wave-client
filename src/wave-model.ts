@@ -1,10 +1,6 @@
 import { EventSourceConnection } from "./EventSourceConnection";
 import { authRequest, AuthRequest } from "./channel-auth";
-
-interface Options {
-    namespace: string,
-    authEndpoint:string,
-}
+import { Options } from './echo-broadcaster/wave-connector';
 
 const authMethods = [
     'created',

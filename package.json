@@ -1,6 +1,6 @@
 {
   "name": "laravel-wave",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Event Source adapter for Laravel broadcasting system.",
   "keywords": [
     "laravel",

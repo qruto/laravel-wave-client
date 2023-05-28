@@ -23,7 +23,7 @@ export class Wave {
     constructor(options?: Options) {
         this.options = { ...this.options, ...options };
         this.connection = new EventSourceConnection();
-        this.connection.create(this.options.endpoint, this.options.withCredentials);
+        this.connection.create(this.options.endpoint, this.options);
     }
 
     public model(model: string, key: string) {

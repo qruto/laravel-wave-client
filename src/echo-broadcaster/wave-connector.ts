@@ -35,7 +35,7 @@ export class WaveConnector extends Connector {
 
     connect() {
         this.connection = new EventSourceConnection();
-        this.connection.create(this.options.endpoint, this.options.withCredentials);
+        this.connection.create(this.options.endpoint, this.options);
     }
 
     public channel(channel: string): WaveChannel {

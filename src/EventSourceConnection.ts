@@ -6,8 +6,8 @@ export class EventSourceConnection {
     protected afterConnectCallbacks: ((connectionId) => void)[] = [];
     protected reconnecting = false;
 
-    public create(endpoint: string, withCredentials = false) {
-        this.source = new EventSource(endpoint, { withCredentials });
+    public create(endpoint: string, options: any) {
+        this.source = new EventSource(this.createEndpoint(endpoint, options), { withCredentials: options.withCredentials });
         this.source.addEventListener('connected', (event: any) => {
             this.id = event.data;
 
@@ -29,7 +29,7 @@ export class EventSourceConnection {
 
                 case EventSource.CLOSED:
                     console.log('Wave connection closed');
-                    this.create(endpoint, withCredentials);
+                    this.create(endpoint, options);
                     this.resubscribe();
                     break;
             }
@@ -91,4 +91,17 @@ export class EventSourceConnection {
     public afterConnect(callback: (connectionId) => void) {
         this.afterConnectCallbacks.push(callback);
     }
+
+    public createEndpoint(endpoint: string, options: any): string {
+        const { bearerToken, csrfToken } = options;
+        const queryString = this.objectToQueryString({ bearerToken, csrfToken });
+        return `${endpoint}?${queryString}`;
+    }
+
+    public objectToQueryString(obj: { [key: string]: any }): string {
+        return Object.entries(obj)
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&');
+    }
+    
 }

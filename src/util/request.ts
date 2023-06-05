@@ -12,19 +12,21 @@ export default function request(connection: EventSourceConnection) {
 
         const csrfTokenHeader = csrfToken ? {'X-XSRF-TOKEN': csrfToken} : {}
 
-        const fetchRequest = (connectionId) => fetch(route, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Socket-Id': connectionId,
-                ...options.auth.headers,
-                ...csrfTokenHeader,
-            },
-            body: JSON.stringify(data || {}),
-        }).then((response) => {
-            return response.headers.get('content-type') === 'application/json' ? response.json() : response;
-        });
+        const fetchRequest = (connectionId) => window.fetch(route, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Socket-Id': connectionId,
+                    ...options.auth.headers,
+                    ...csrfTokenHeader,
+                },
+                body: JSON.stringify(data || {}),
+            }).then(
+                (response) =>
+                    response.headers.get('content-type')
+                    === 'application/json' ? response.json() : response
+            );
 
         return typeof connection.getId() === 'undefined' ? new Promise((resolve) => {
             connection.afterConnect((connectionId) => {

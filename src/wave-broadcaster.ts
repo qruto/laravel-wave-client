@@ -10,20 +10,16 @@ export class Wave {
 
     private options: Options = {
         endpoint: '/wave',
-        withCredentials: false,
+        namespace: 'App.Models',
         auth: {
             headers: {},
         },
         authEndpoint: '/broadcasting/auth',
-        csrfToken: null,
-        bearerToken: null,
-        namespace: 'App.Models',
     }
 
     constructor(options?: Options) {
         this.options = { ...this.options, ...options };
-        this.connection = new EventSourceConnection();
-        this.connection.create(this.options.endpoint, this.options.withCredentials);
+        this.connection = new EventSourceConnection(this.options.endpoint, this.options.request);
     }
 
     public model(model: string, key: string) {

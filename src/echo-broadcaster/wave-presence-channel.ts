@@ -22,6 +22,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
 
     public here(callback: Function): WavePresenceChannel {
         if (this.joined) {
+            // TODO: error handling
             request(this.connection)
                 .get(this.options.endpoint + '/presence-channel-users', this.options, { channel_name: this.name })
                 .then((users) => callback(users));
@@ -52,10 +53,15 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
         return this;
     }
 
-    public unsubscribe(): void {
-        this.joinRequest.after(() => {
-            request(this.connection).delete(this.options.endpoint + '/presence-channel-users', this.options, { channel_name: this.name });
-            super.unsubscribe();
+    public unsubscribe() {
+        return new Promise((resolve) => {
+            this.joinRequest.after(() => {
+                request(this.connection).delete(this.options.endpoint + '/presence-channel-users', this.options, { channel_name: this.name })
+                    .then(() => {
+                        super.unsubscribe();
+                        resolve(null);
+                    });
+            });
         });
     }
 }

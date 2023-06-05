@@ -9,7 +9,7 @@ import WavePresenceChannel from './wave-presence-channel';
 export interface Options {
     endpoint: string,
 
-    withCredentials: boolean,
+    namespace: string,
 
     auth: {
         headers: Record<string, string>,
@@ -21,7 +21,7 @@ export interface Options {
 
     bearerToken?: string,
 
-    namespace: string,
+    request?: RequestInit,
 }
 
 export class WaveConnector extends Connector {
@@ -34,8 +34,7 @@ export class WaveConnector extends Connector {
     }
 
     connect() {
-        this.connection = new EventSourceConnection();
-        this.connection.create(this.options.endpoint, this.options.withCredentials);
+        this.connection = new EventSourceConnection(this.options.endpoint, this.options.request);
     }
 
     public channel(channel: string): WaveChannel {

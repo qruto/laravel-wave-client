@@ -1,62 +1,76 @@
-import { MockEvent } from 'mocksse';
 import { EventSourceConnection } from '../src/EventSourceConnection';
-import { expect, jest, test } from '@jest/globals';
-import { mockEventSource, fireEvent } from './utils';
 
+import { prepare, fireEvent } from './utils';
+
+import { closeStream, mockEventSource } from './sse-mock';
 mockEventSource();
 
-const connection = new EventSourceConnection();
+test('create event source connection', async () => {
+  const connectionId = await prepare(
+      (resolve) => {
+        (new EventSourceConnection('/wave')).afterConnect((id: string) => resolve(id));
+      },
+      () => fireEvent('connected', 'some-random-key')
+  );
 
-test('create event source connection', () => {
-  new MockEvent({
-    url: '/wave',
-    responses: [
-      { type: 'connected', data: 'some-random-key'},
-    ]
-  })
-
-  connection.afterConnect((connectionId) => expect(connectionId).toBe('some-random-key'));
-  connection.create('/wave');
+  expect(connectionId).toBe('some-random-key');
 });
 
-test('channel subscription', () => {
-  fireEvent('channel', { foo: 'bar' });
+test('channel subscription', async () => {
+  const data = { foo: 'bar' };
 
-  connection.create('/wave');
+  const result = await prepare(
+      (resolve) => {
+        (new EventSourceConnection('/wave')).subscribe('some-event', message => resolve(message));
+      },
+      () => fireEvent('some-event', data)
+  );
 
-  connection.subscribe('some-event', (data) => expect(data).toEqual({ foo: 'bar' }));
+  expect(result).toEqual(data);
 });
 
-test('some-event unsubscribe', (done) => {
+test('some-event unsubscribe', async () => {
   const listener = jest.fn();
 
-  connection.create('/wave');
+  await prepare(
+      (resolve) => {
+          const connection = new EventSourceConnection('/wave', {}, false);
 
-  connection.subscribe('some-event', listener);
+          connection.subscribe('some-event', () => resolve(listener()));
+          connection.unsubscribe('some-event');
+          connection.getSourcePromise().then(() => resolve(null))
+      },
+      async () => {
+        await fireEvent('some-event', { foo: 'bar' });
+        await closeStream();
+      }
+  );
 
-  connection.unsubscribe('some-event');
-
-  fireEvent('some-event', { foo: 'bar' });
-
-  setTimeout(() => {
-    expect(listener).not.toHaveBeenCalled();
-    done();
-  }, 100);
+  expect(listener).not.toHaveBeenCalled();
 });
 
-test('some-event remove listener', (done) => {
+test('some-event remove listener', async () => {
   const listener = jest.fn();
 
-  connection.create('/wave');
+  await prepare(
+      (resolve) => {
+        const callback = () => {
+          resolve(listener());
+        };
 
-  connection.subscribe('some-event', listener);
+        const connection = new EventSourceConnection('/wave', {}, false);
 
-  connection.removeListener('some-event', listener);
+        connection.subscribe('some-event', callback);
+        connection.removeListener('some-event', callback);
+        connection.getSourcePromise().then(() => {
+            resolve(null);
+        });
+      },
+      async () => {
+        await fireEvent('some-event', { foo: 'bar' });
+        await closeStream();
+      }
+  );
 
-  fireEvent('some-event', { foo: 'bar' });
-
-  setTimeout(() => {
-    expect(listener).not.toHaveBeenCalled();
-    done();
-  }, 100);
+  expect(listener).not.toHaveBeenCalled();
 });

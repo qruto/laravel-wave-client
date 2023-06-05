@@ -1,43 +1,63 @@
-import { beforeEach } from '@jest/globals';
-import { MockEvent, EventSource } from 'mocksse';
+import { EventSourceMessage } from '@microsoft/fetch-event-source';
 
-export function mockEventSource() {
-    beforeEach(() => {
-        EventSource.prototype.removeEventListener = function (eventName: string | symbol, listener: (...args: any[]) => void) {
-            return this.removeListener(eventName, listener);
+import { events, streamChunkResolve, setEventResolve, setStreamChunkResolve } from './sse-mock';
+
+function formatEvent(event: EventSourceMessage) {
+    let formattedEvent = `id: ${event.id}\nevent: ${event.event}\ndata: ${event.data}`;
+
+    if (event.retry !== undefined) {
+        formattedEvent += `\nretry: ${event.retry}`;
+    }
+
+    formattedEvent += '\n\n';
+
+    const encoder = new TextEncoder();
+    return encoder.encode(formattedEvent);
+}
+
+export function resolveEvent(event: ReadableStreamReadResult<Uint8Array>) {
+    return new Promise<void>(resolve => {
+        if (streamChunkResolve === null) {
+            events.push(event);
+
+            setEventResolve(resolve);
+
+            return;
         }
-        global.EventSource = EventSource;
 
-        new MockEvent({
-            url: '/wave',
-            responses: [
-                { type: 'connected', data: 'some-random-key'},
-            ]
-        })
+        streamChunkResolve(event);
+
+        setStreamChunkResolve(null);
+
+        resolve();
     });
+}
 
-    afterEach(() => {
-        const mock = new MockEvent({
-            url: '/wave',
-            responses: [
-                { type: 'ping', data: 'pong'},
-            ]
-        });
+export function fireEvent(type: string, data: object|string, retry?: number) {
+    const event: EventSourceMessage = {
+        id: Math.random().toString(36).substring(2),
+        event: type,
+        data: typeof data === 'string' ? data : JSON.stringify(data),
+        retry: retry,
+    };
 
-        mock.clear();
-    })
+    return resolveEvent({ value: formatEvent(event), done: false });
 }
 
 export function sendNotification(model: string, type: string, data: object) {
     return fireEvent(`private-${model}.Illuminate\\Notifications\\Events\\BroadcastNotificationCreated`, { type, ...data });
 }
 
-export function fireEvent(type: string, data: object, interval = 0) {
-  return new MockEvent({
-    url: '/wave',
-    setInterval: interval,
-    responses: [
-      { type: type, data: JSON.stringify({ data })},
-    ],
-  });
+type PromiseResolver<T> = (resolve: (value: T | PromiseLike<T>) => void) => void;
+
+export function prepare<T>(setupCallback: PromiseResolver<T>, afterConnectCallback?: PromiseResolver<T>) {
+    return new Promise<T>((resolve) => {
+        setupCallback(resolve);
+
+        if (typeof afterConnectCallback === 'function') {
+            // setImmediate(() => afterConnectCallback(resolve));
+            Promise.resolve().then(() => afterConnectCallback(resolve));
+            // afterConnectCallback(value => Promise.resolve(value).then(resolve));
+        }
+    });
 }

@@ -1,166 +1,154 @@
-import { mockEventSource, fireEvent, sendNotification } from "./utils";
+import { prepare, fireEvent, sendNotification } from "./utils";
 import { Wave } from "../src/wave";
 
+import { mockEventSource } from './sse-mock';
 mockEventSource();
 
 let wave: Wave;
 
-beforeEach(() => {
+beforeEach(async () => {
     wave = new Wave();
+
+    await fireEvent('connected', 'some-random-key');
 })
 
-beforeAll(() => {
-    const headers = new Map();
-    headers.set('content-type', 'application/json');
+test('notification listener', async () => {
+    const result = await prepare(
+        (resolve) => {
+            wave.model('User', '1')
+                .notification('App\\Notifications\\NewMessage', function (data) {
+                    resolve(data);
+                });
+        },
+        () => sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' })
+    );
 
-    global.fetch = jest.fn().mockImplementation(() => Promise.resolve({
-        headers,
-        json: () => Promise.resolve(['user1', 'user2']),
-    }));
-
-    Object.defineProperty(global, 'window', {
-        writable: true,
-        value: {
-            'addEventListener': jest.fn().mockImplementation(event => event),
-        }
-    });
-
-    Object.defineProperty(global, 'document', {
-        writable: true,
-        value: {
-            'cookie': 'XSRF-TOKEN=some-random-token',
-        }
-    });
-})
-
-test('notification listener', (done) => {
-    expect.assertions(1);
-
-    wave.model('User', '1')
-        .notification('App\\Notifications\\NewMessage', function (data) {
-            expect(data).toMatchObject({ text: 'foo' });
-        });
-
-    sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' });
-
-    postponeDone(done);
+    expect(result).toMatchObject({ text: 'foo' });
 });
 
-test('several notification listeners', (done) => {
-    expect.assertions(2);
+test('several notification listeners', async () => {
+    const listener = jest.fn();
+    const listener2 = jest.fn();
 
-    wave.model('User', '1')
-        .notification('App\\Notifications\\NewMessage', function (data) {
-            expect(data).toMatchObject({ text: 'foo' });
-        });
+    await prepare(
+        () => {
+            wave.model('User', '1')
+                .notification('App\\Notifications\\NewMessage', listener);
 
-    wave.model('User', '1')
-        .notification('App\\Notifications\\NewMessage', function (data) {
-            expect(data).toMatchObject({ text: 'foo' });
-        });
+            wave.model('User', '1')
+                .notification('App\\Notifications\\NewMessage', listener2);
+        },
+        async (resolve) => {
+            await sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' });
+            resolve(null);
+        }
+    );
 
-    sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' });
-
-    postponeDone(done);
+    expect(listener).toHaveBeenCalled();
+    expect(listener2).toHaveBeenCalled();
 });
 
-test('remove notification listener', (done) => {
-    expect.assertions(1);
-
+test('remove notification listener', async () => {
     const listener = jest.fn();
 
-    wave.model('User', '1')
-        .notification('App\\Notifications\\NewMessage', listener);
+    await prepare(
+        () => {
+            wave.model('User', '1')
+                .notification('App\\Notifications\\NewMessage', listener);
+        },
+        (resolve) => {
+            wave.model('User', '1')
+                .stopListeningNotification('App\\Notifications\\NewMessage', listener);
+            sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' });
+            resolve(null);
+        }
+    );
 
-    wave.model('User', '1').stopListeningNotification('App\\Notifications\\NewMessage', listener);
-
-    sendNotification('App.Models.User.1', 'App\\Notifications\\NewMessage', { text: 'foo' });
-
-    postponeDone(done, () => expect(listener).not.toHaveBeenCalled());
+    expect(listener).not.toHaveBeenCalled();
 });
 
-test('model updated event', (done) => {
-    expect.assertions(1);
+test('model updated event', async () => {
+    const user = { name: 'John' };
 
-    wave.model('User', '1')
-        .updated(function (model) {
-            expect(model).toEqual({ name: 'John' });
-        });
+    const result = await prepare(
+        (resolve) => {
+            wave.model('User', '1')
+                .updated(function (model) {
+                    resolve(model);
+                });
+        },
+        () => fireEvent('private-App.Models.User.1.UserUpdated', { model: user })
+    );
 
-
-    fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
-
-    postponeDone(done);
+    expect(result).toEqual(user);
 });
 
-test('different model updated event on same model', (done) => {
-    expect.assertions(2);
+test('different model updated event on same model', async () => {
+    const data = { user: null, team: null };
 
-    wave.model('User', '1')
-        .updated(function (model) {
-            expect(model).toEqual({ name: 'John' });
-        }).updated('Team', function (model) {
-            expect(model).toEqual({ name: 'John' });
-        });
+    await prepare(() => {
+        wave.model('User', '1')
+            .updated(function (model) {
+                data.user = model;
+            }).updated('Team', function (model) {
+                data.team = model;
+            });
+        },
+        async (resolve) => {
+            await fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
+            await fireEvent('private-App.Models.User.1.TeamUpdated', { model: { name: 'Personal' } });
 
-    fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
-    fireEvent('private-App.Models.User.1.TeamUpdated', { model: { name: 'John' } });
+            resolve(null);
+        }
+    );
 
-    postponeDone(done);
+    expect(data.user).toEqual({ name: 'John' });
+    expect(data.team).toEqual({ name: 'Personal' });
 });
 
-test('several listeners', (done) => {
-    expect.assertions(2);
+test('several listeners', async () => {
+    const listener = jest.fn();
 
-    wave.model('User', '1')
-        .updated(function (model) {
-            expect(model).toEqual({ name: 'John' });
-        })
+    await prepare(
+        () => {
+            wave.model('User', '1')
+                .updated(listener);
 
-    wave.model('User', '1')
-        .updated(function (model) {
-            expect(model).toEqual({ name: 'John' });
-        });
+            wave.model('User', '1')
+                .updated(listener);
+        },
+        async (resolve) => {
+            await fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
+            resolve(null);
+        }
+    );
 
-    fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
-
-    postponeDone(done);
+    expect(listener).toBeCalledTimes(2);
 });
 
-test('remove listener', (done) => {
-    expect.assertions(3);
-
+test('remove listener', async () => {
     const listener1 = jest.fn();
     const listener2 = jest.fn();
     const listener3 = jest.fn();
 
-    wave.model('User', '1')
-        .updated(listener1);
+    await prepare(
+        () => {
+            wave.model('User', '1')
+                .updated(listener1);
 
-    wave.model('User', '1')
-        .updated(listener2)
-        .updated('Team', listener3);
+            wave.model('User', '1')
+                .updated(listener2)
+                .updated('Team', listener3);
+        },
+        async (resolve) => {
+            wave.model('User', '1')
+                .stopListening('updated', listener1)
+                .stopListening('Team', 'updated', listener3);
 
-    wave.model('User', '1')
-        .stopListening('updated', listener1)
-        .stopListening('Team', 'updated', listener3);
+            await fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
+            await fireEvent('private-App.Models.User.1.TeamUpdated', { model: { name: 'John' } });
 
-    fireEvent('private-App.Models.User.1.UserUpdated', { model: { name: 'John' } });
-    fireEvent('private-App.Models.User.1.TeamUpdated', { model: { name: 'John' } });
-
-    postponeDone(done, () => {
-        expect(listener1).not.toBeCalled();
-        expect(listener2).toBeCalled();
-        expect(listener3).not.toBeCalled();
-    });
-});
-
-function postponeDone(done: Function, callback?: Function) {
-   setTimeout(() => {
-        if (callback) {
-            callback();
+            resolve(null);
         }
-
-        done();
-    }, 100);
-}
+    );
+});

@@ -1,7 +1,9 @@
-import { mockEventSource, fireEvent } from "./utils";
+import { prepare, fireEvent } from "./utils";
 import Echo from "laravel-echo";
 import { WaveConnector } from "../src/echo-broadcaster/wave-connector";
 import { EventFormatter } from "../src/echo/event-formatter";
+
+import { mockEventSource } from './sse-mock';
 
 mockEventSource();
 
@@ -11,129 +13,108 @@ let echo = null;
 afterEach(() => {
     echo = null;
 });
-beforeEach(() => {
+beforeEach(async () => {
     echo = new Echo({
         broadcaster: WaveConnector
     });
+
+    await fireEvent('connected', 'some-random-key');
 })
 
-beforeAll(() => {
-    const headers = new Map();
-    headers.set('content-type', 'application/json');
+test('echo public event', async () => {
+    const result = await prepare(
+        (resolve) => {
+            echo.channel('public')
+                .listen('SomeEvent', function (data) {
+                    resolve(data);
+                });
+        },
+        () => fireEvent('public.'+eventFormatter.format('SomeEvent'), { foo: 'bar' })
+    )
 
-    global.fetch = jest.fn(() => Promise.resolve({
-        headers,
-        json: () => Promise.resolve(['user1', 'user2']),
-    })) as jest.Mock;
+    expect(result).toEqual({ foo: 'bar' });
+});
+test('echo private event', async () => {
+    const result = await prepare(
+        (resolve) => {
+            echo.private('chat')
+                .listen('NewMessage', function (data) {
+                    resolve(data);
+                });
+        },
+        () => fireEvent('private-chat.' + eventFormatter.format('NewMessage'), { text: 'foo' })
+    );
 
-    Object.defineProperty(global, 'window', {
-        writable: true,
-        value: {
-            'addEventListener': jest.fn().mockImplementation(event => event),
-        }
+    expect(result).toEqual({ text: 'foo' });
+});
+
+test('echo presence event', async () => {
+    const result = await prepare(
+        (resolve) => {
+            echo.join('chat')
+                .listen('NewMessage', function (data) {
+                    resolve(data);
+                });
+        },
+        () => fireEvent('presence-chat.'+eventFormatter.format('NewMessage'), { text: 'foo' })
+    );
+
+    expect(result).toEqual({ text: 'foo' });
+});
+
+test('echo presence here event', async () => {
+    const result = await prepare((resolve) => {
+        echo.join('chat')
+            .here(function (users) {
+               resolve(users);
+            });
     });
-})
 
-test('echo public event', (done) => {
-    expect.assertions(1);
-
-    echo.channel('public')
-        .listen('SomeEvent', function (data) {
-            expect(data).toEqual({ foo: 'bar' });
-        });
-
-    fireEvent('public.'+eventFormatter.format('SomeEvent'), { foo: 'bar' });
-
-    setTimeout(() => {
-        done();
-    }, 100);
+    expect(result).toEqual(['rick', 'morty']);
 });
 
-test('echo private event', (done) => {
-    expect.assertions(1);
+test('echo presence join event', async () => {
+    const result = await prepare(
+        (resolve) => {
+            echo.join('chat')
+                .joining(function (user) {
+                    resolve(user);
+                });
+        },
+        () => fireEvent('presence-chat.join', { name: 'john' })
+    );
 
-    echo.private('chat')
-        .listen('NewMessage', function (data) {
-            expect(data).toEqual({ text: 'foo' });
-        });
-
-    fireEvent('private-chat.'+eventFormatter.format('NewMessage'), { text: 'foo' });
-
-    setTimeout(() => {
-        done();
-    }, 100);
+    expect(result).toEqual({ name: 'john'});
 });
 
-test('echo presence event', (done) => {
-    expect.assertions(1);
+test('echo presence leave event', async () => {
+    const result = await prepare(
+        (resolve) => {
+            echo.join('chat')
+                .leaving(function (user) {
+                    resolve(user);
+                });
+        },
+        () => fireEvent('presence-chat.leave', { name: 'john' })
+    );
 
-    echo.join('chat')
-        .listen('NewMessage', function (data) {
-            expect(data).toEqual({ text: 'foo' });
-        });
-
-    fireEvent('presence-chat.'+eventFormatter.format('NewMessage'), { text: 'foo' });
-
-    setTimeout(() => {
-        done();
-    }, 100);
+    expect(result).toEqual({ name: 'john'});
 });
 
-test('echo presence here event', (done) => {
-    expect.assertions(1);
-
-    echo.join('chat')
-        .here(function (users) {
-            expect(users).toEqual(['user1', 'user2']);
-        });
-
-    setTimeout(() => {
-        done();
-    }, 100);
-});
-
-test('echo presence here event', (done) => {
-    expect.assertions(1);
-
-    echo.join('chat')
-        .joining(function (user) {
-            expect(user).toEqual({ name: 'john'});
-        });
-
-    fireEvent('presence-chat.join', { name: 'john' });
-
-    setTimeout(() => {
-        done();
-    }, 100);
-});
-
-test('echo presence leave event', (done) => {
-    expect.assertions(1);
-
-    echo.join('chat')
-        .leaving(function (user) {
-            expect(user).toEqual({ name: 'john'});
-        });
-
-    fireEvent('presence-chat.leave', { name: 'john' });
-
-    setTimeout(() => {
-        done();
-    }, 100);
-});
-
-test('echo presence channel unsubscribe', (done) => {
-    expect.assertions(1);
+test('echo presence channel unsubscribe', async () => {
     const listener = jest.fn();
 
-    echo.join('chat').listen('NewMessage', listener);
+    await prepare(
+        (resolve) => {
+            echo.join('chat').listen('NewMessage', () => resolve(listener()));
+        },
+        async (resolve) => {
+            await echo.join('chat').unsubscribe();
+            await fireEvent('presence-chat.' + eventFormatter.format('NewMessage'), { text: 'foo' });
+            resolve(null);
+        }
+    );
 
-    echo.join('chat').unsubscribe();
-
-    fireEvent('presence-chat.'+eventFormatter.format('NewMessage'), { text: 'foo' });
-
-    setTimeout(() => {
-        expect(listener).not.toHaveBeenCalled();
-        done();
-    }, 100);
+    // Make sure to wait a bit to ensure unsubscribe effect.
+    expect(listener).not.toHaveBeenCalled();
 });

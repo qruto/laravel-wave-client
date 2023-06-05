@@ -45,7 +45,6 @@
     "@typescript-eslint/parser": "^5.14.0",
     "eslint": "^8.11.0",
     "jest": "^28.1.0",
-    "mocksse": "^1.0.4",
     "node-ray": "^1.18.0",
     "rollup": "^2.75.5",
     "rollup-plugin-typescript2": "^0.32.0",
@@ -60,5 +59,8 @@
   "engines": {
     "node": ">=10"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1"
+  }
 }

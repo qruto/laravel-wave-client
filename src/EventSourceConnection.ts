@@ -1,56 +1,100 @@
+import { EventSourceMessage, fetchEventSource } from '@microsoft/fetch-event-source';
+
+class RetriableError extends Error { }
+
+class FatalError extends Error { }
+
 export class EventSourceConnection {
     protected id: string;
-    public source: EventSource;
-
-    protected listeners: Record<string, Map<Function, EventListener>> = {};
+    protected listeners: Record<string, Map<Function, (message: EventSourceMessage) => void>> = {};
     protected afterConnectCallbacks: ((connectionId) => void)[] = [];
     protected reconnecting = false;
+    protected ctrl: AbortController;
+    protected sourcePromise: Promise<void>;
 
-    public create(endpoint: string, withCredentials = false) {
-        this.source = new EventSource(endpoint, { withCredentials });
-        this.source.addEventListener('connected', (event: any) => {
-            this.id = event.data;
+    constructor(endpoint: string, request?: RequestInit, reconnect = true) {
+        this.ctrl = new AbortController();
 
-            if (!this.reconnecting) {
-                this.afterConnectCallbacks.forEach(callback => callback(this.id));
+        let formattedHeaders: Record<string, string> = {};
+
+        if (request?.headers) {
+            if (request.headers instanceof Headers) {
+                request.headers.forEach((value, key) => {
+                    formattedHeaders[key] = value;
+                });
+            } else if (Array.isArray(request.headers)) {
+                formattedHeaders = Object.fromEntries(request.headers);
+            } else {
+                formattedHeaders = request.headers;
             }
+        }
 
-            this.reconnecting = false;
+        this.sourcePromise = fetchEventSource(endpoint, {
+             signal: this.ctrl.signal,
+            ...{ ...request, headers: formattedHeaders },
+            async onopen(response) {
+                if (response.ok && response.headers.get('content-type').startsWith('text/event-stream')) {
+                    return; // everything's good
+                } else if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+                    // client-side errors are usually non-retriable:
+                    throw new FatalError();
+                } else {
+                    throw new RetriableError();
+                }
+            },
+            onmessage: (message) => {
+                // if the server emits an error message, throw an exception
+                // so it gets handled by the onerror callback below:
+                if (message.event === 'connected') {
+                    this.id = message.data;
 
-            console.log('Wave connected.');
-        });
+                    if (!this.reconnecting) {
+                        this.afterConnectCallbacks.forEach(callback => callback(this.id));
+                    }
 
-        this.source.addEventListener('error', (event: any) => {
-            switch (event.target.readyState) {
-                case EventSource.CONNECTING:
+                    this.reconnecting = false;
+
+                    console.log('Wave connected.');
+
+                    return;
+                }
+
+
+                this.listeners[message.event]?.forEach(listener => listener({ ...message }));
+            },
+            onclose: () => {
+                 if (this.ctrl.signal.aborted || !reconnect) {
+                    console.log('Wave disconnected.');
+                    return;
+                 }
+                // if the server closes the connection unexpectedly, retry:
+                throw new RetriableError();
+            },
+            onerror: (err) => {
+                //TODO: recheck
+                if (err instanceof FatalError || 'matcherResult' in err) {
+                    throw err; // rethrow to stop the operation
+                } else {
+                    // do nothing to automatically retry. You can also
+                    // return a specific retry interval here.
                     this.reconnecting = true;
                     console.log('Wave reconnecting...');
-                    break;
-
-                case EventSource.CLOSED:
-                    console.log('Wave connection closed');
-                    this.create(endpoint, withCredentials);
-                    this.resubscribe();
-                    break;
-            }
-        }, false);
+                }
+            },
+        });
     }
 
     public getId() {
         return this.id;
     }
 
-    private resubscribe() {
-        for (let event in this.listeners) {
-            this.listeners[event].forEach(listener => {
-                this.source.addEventListener(event, listener);
-            });
-        }
+    public getSourcePromise() {
+        return this.sourcePromise;
     }
 
     public subscribe(event: string, callback: Function) {
-        let listener = function (event: MessageEvent) {
-            callback(JSON.parse(event.data).data);
+        let listener = function (event: EventSourceMessage) {
+            callback(JSON.parse(event.data));
         };
 
         if (!this.listeners[event]) {
@@ -58,15 +102,9 @@ export class EventSourceConnection {
         }
 
         this.listeners[event].set(callback, listener);
-
-        this.source.addEventListener(event, listener);
     }
 
     public unsubscribe(event: string) {
-        this.listeners[event].forEach(listener => {
-            this.source.removeEventListener(event, listener);
-        });
-
         delete this.listeners[event];
     }
 
@@ -74,8 +112,6 @@ export class EventSourceConnection {
         if (!this.listeners[event] || !this.listeners[event].has(callback)) {
             return;
         }
-
-        this.source.removeEventListener(event, this.listeners[event].get(callback));
 
         this.listeners[event].delete(callback);
 
@@ -85,7 +121,7 @@ export class EventSourceConnection {
     }
 
     public disconnect() {
-        this.source.close();
+        this.ctrl.abort('disconnect');
     }
 
     public afterConnect(callback: (connectionId) => void) {

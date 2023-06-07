@@ -12,14 +12,22 @@ export default class WavePrivateChannel extends WaveChannel {
 
     protected auth: AuthRequest;
 
+    protected errorCallbacks: Function[] = [];
+
     constructor(connection, name, options) {
         super(connection, name, options);
 
         this.auth = authRequest(name, connection, this.options);
+
+        this.auth.response.catch(
+            error => this.errorCallbacks.forEach((callback) => callback(error))
+        );
     }
 
     public whisper(eventName, data) {
-        request(this.connection).post(this.options.endpoint + '/whisper', this.options, { channel_name: this.name, event_name: eventName, data });
+        request(this.connection)
+            .post(this.options.endpoint + '/whisper', this.options, { channel_name: this.name, event_name: eventName, data })
+            .catch(error => this.errorCallbacks.forEach((callback) => callback(error)));
 
         return this;
     }
@@ -49,6 +57,12 @@ export default class WavePrivateChannel extends WaveChannel {
 
     public on(event: string, callback: Function): WavePrivateChannel {
         this.auth.after(() => super.on(event, callback));
+
+        return this;
+    }
+
+    public error(callback: Function): WaveChannel {
+        this.errorCallbacks.push(callback);
 
         return this;
     }

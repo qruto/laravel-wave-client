@@ -15,22 +15,30 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
         this.joinRequest = authRequest(name, connection, { ...this.options, authEndpoint: this.options.endpoint + '/presence-channel-users' })
             .after(() => this.joined = true);
 
+        this.joinRequest.response.catch(
+            error => {
+                this.errorCallbacks.forEach((callback) => callback(error));
+            }
+        )
+
         if (typeof window !== 'undefined') {
-            window.addEventListener('beforeunload', () => this.unsubscribe());
+            window.addEventListener('beforeunload', async () => await this.unsubscribe());
         }
     }
 
     public here(callback: Function): WavePresenceChannel {
+        const getUsersList = async (response) => callback(await response.json());
+
         if (this.joined) {
-            // TODO: error handling
             request(this.connection)
                 .get(this.options.endpoint + '/presence-channel-users', this.options, { channel_name: this.name })
-                .then((users) => callback(users));
+                .then(getUsersList)
+                .catch((error) => this.errorCallbacks.forEach((callback) => callback(error)));
 
             return this;
         }
 
-        this.joinRequest.after((users) => callback(users))
+        this.joinRequest.after(getUsersList)
 
         return this;
     }
@@ -54,12 +62,15 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
     }
 
     public unsubscribe() {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             this.joinRequest.after(() => {
-                request(this.connection).delete(this.options.endpoint + '/presence-channel-users', this.options, { channel_name: this.name })
+                request(this.connection, true).delete(this.options.endpoint + '/presence-channel-users', this.options, { channel_name: this.name })
                     .then(() => {
                         super.unsubscribe();
                         resolve(null);
+                    }).catch((error) => {
+                        this.errorCallbacks.forEach((callback) => callback(error));
+                        reject(error);
                     });
             });
         });

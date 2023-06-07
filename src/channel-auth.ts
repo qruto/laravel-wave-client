@@ -8,6 +8,15 @@ export interface AuthRequest {
     response: Promise<void>;
 }
 
+export class AuthRequestError extends Error {
+    public response: Response;
+    constructor(message: string, response: Response) {
+        super(message);
+        this.name = 'AuthRequestError';
+        this.response = response;
+    }
+}
+
 export function authRequest(channel: string, connection: EventSourceConnection, options: Options): AuthRequest {
     let authorized = false;
     let afterAuthCallbacks: Function[] = [];
@@ -24,13 +33,19 @@ export function authRequest(channel: string, connection: EventSourceConnection, 
         return this;
     }
 
-    const response = request(connection).post(options.authEndpoint, options, { channel_name: channel }).then((response) => {
-        authorized = true;
+    const response = request(connection)
+        .post(options.authEndpoint, options, { channel_name: channel })
+        .then((response) => {
+            if (!response.ok) {
+                throw new AuthRequestError(`Auth request to failed with status ${response.status}`, response);
+            }
 
-        afterAuthCallbacks.forEach((callback) => callback(response));
+            authorized = true;
 
-        afterAuthCallbacks = [];
-    });
+            afterAuthCallbacks.forEach((callback) => callback(response));
+
+            afterAuthCallbacks = [];
+        });
 
     return {
         after,

@@ -1,29 +1,46 @@
 import { EventSourceConnection } from "../EventSourceConnection";
 import { Options } from '../echo-broadcaster/wave-connector';
 
+type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+
+function prepareRequest(
+    connectionId: string,
+    method: HTTPMethod,
+    options: Options,
+    data?: object,
+    keepAlive = false
+): RequestInit {
+    let csrfToken =  '';
+
+    if (typeof document !== 'undefined' && options.auth.headers['X-CSRF-TOKEN'] === undefined) {
+        const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+        csrfToken = match ? decodeURIComponent(match[3]) : null;
+    }
+
+    const csrfTokenHeader = csrfToken ? {'X-XSRF-TOKEN': csrfToken} : {}
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Socket-Id': connectionId,
+        ...options.auth.headers,
+        ...csrfTokenHeader,
+    };
+
+    return {
+        headers: headers,
+        body: JSON.stringify(data || {}),
+        keepalive: keepAlive,
+        ...options.request,
+    };
+}
+
 export default function request(connection: EventSourceConnection, keepAlive = false) {
-    function create(method: 'GET' | 'POST' | 'PUT' | 'DELETE', route: string, options: Options, data?: object): Promise<Response> {
-        let csrfToken =  '';
-
-        if (typeof document !== 'undefined' && options.auth.headers['X-CSRF-TOKEN'] === undefined) {
-            const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
-            csrfToken = match ? decodeURIComponent(match[3]) : null;
-        }
-
-        const csrfTokenHeader = csrfToken ? {'X-XSRF-TOKEN': csrfToken} : {}
-
-        const fetchRequest = (connectionId) => window.fetch(route, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Socket-Id': connectionId,
-                    ...options.auth.headers,
-                    ...csrfTokenHeader,
-                },
-                body: JSON.stringify(data || {}),
-                keepalive: keepAlive,
-            });
+    function create(method: HTTPMethod, route: string, options: Options, data?: object): Promise<Response> {
+        const fetchRequest = (connectionId) => window.fetch(
+            route,
+            prepareRequest(connectionId, method, options, data, keepAlive)
+        );
 
         return typeof connection.getId() === 'undefined' ? new Promise((resolve) => {
             connection.afterConnect((connectionId) => {

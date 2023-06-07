@@ -86,7 +86,9 @@ export default class WaveChannel extends Channel {
     }
 
     subscribed(callback: Function): WaveChannel {
-        return callback();
+        this.connection.afterConnect(callback as (connectionId: string) => void);
+
+        return this;
     }
 
     error(callback: Function): WaveChannel {

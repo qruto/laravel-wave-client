@@ -1,7 +1,7 @@
 import { EventSourceConnection } from "../EventSourceConnection";
 import { Options } from '../echo-broadcaster/wave-connector';
 
-export default function request(connection: EventSourceConnection) {
+export default function request(connection: EventSourceConnection, keepAlive = false) {
     function create(method: 'GET' | 'POST' | 'PUT' | 'DELETE', route: string, options: Options, data?: object): Promise<Response> {
         let csrfToken =  '';
 
@@ -22,11 +22,8 @@ export default function request(connection: EventSourceConnection) {
                     ...csrfTokenHeader,
                 },
                 body: JSON.stringify(data || {}),
-            }).then(
-                (response) =>
-                    response.headers.get('content-type')
-                    === 'application/json' ? response.json() : response
-            );
+                keepalive: keepAlive,
+            });
 
         return typeof connection.getId() === 'undefined' ? new Promise((resolve) => {
             connection.afterConnect((connectionId) => {
@@ -35,7 +32,10 @@ export default function request(connection: EventSourceConnection) {
         }) : fetchRequest(connection.getId());
     }
 
-    const factory = (method: 'GET' | 'POST' | 'PUT' | 'DELETE') => (route: string, options: Options, data?: object) => create(method, route, options, data);
+    const factory =
+        (method: 'GET' | 'POST' | 'PUT' | 'DELETE') =>
+            (route: string, options: Options, data?: object) =>
+                create(method, route, options, data);
 
     return {
         get: factory('GET'),

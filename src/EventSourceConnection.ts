@@ -4,6 +4,12 @@ class RetriableError extends Error { }
 
 class FatalError extends Error { }
 
+interface Options {
+    reconnect?: boolean;
+
+    pauseInactive?: boolean;
+}
+
 export class EventSourceConnection {
     protected id: string;
     protected listeners: Record<string, Map<Function, (message: EventSourceMessage) => void>> = {};
@@ -12,7 +18,7 @@ export class EventSourceConnection {
     protected ctrl: AbortController;
     protected sourcePromise: Promise<void>;
 
-    constructor(endpoint: string, request?: RequestInit, reconnect = true) {
+    constructor(endpoint: string, request?: RequestInit, options: Options = { reconnect: true }) {
         this.ctrl = new AbortController();
 
         let formattedHeaders: Record<string, string> = {};
@@ -31,7 +37,16 @@ export class EventSourceConnection {
 
         this.sourcePromise = fetchEventSource(endpoint, {
              signal: this.ctrl.signal,
-            ...{ ...request, headers: formattedHeaders },
+            ...{
+                ...request,
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Connection': 'keep-alive',
+                    ...formattedHeaders,
+                }
+            },
+            openWhenHidden: typeof options.pauseInactive === 'undefined' ? true : !options.pauseInactive,
             async onopen(response) {
                 if (response.ok && response.headers.get('content-type').startsWith('text/event-stream')) {
                     return; // everything's good
@@ -59,11 +74,10 @@ export class EventSourceConnection {
                     return;
                 }
 
-
                 this.listeners[message.event]?.forEach(listener => listener({ ...message }));
             },
             onclose: () => {
-                 if (this.ctrl.signal.aborted || !reconnect) {
+                 if (this.ctrl.signal.aborted || !options.reconnect) {
                     console.log('Wave disconnected.');
                     return;
                  }
@@ -71,7 +85,6 @@ export class EventSourceConnection {
                 throw new RetriableError();
             },
             onerror: (err) => {
-                //TODO: recheck
                 if (err instanceof FatalError || 'matcherResult' in err) {
                     throw err; // rethrow to stop the operation
                 } else {

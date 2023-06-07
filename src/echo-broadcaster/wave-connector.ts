@@ -22,6 +22,8 @@ export interface Options {
     bearerToken?: string,
 
     request?: RequestInit,
+
+    pauseInactive?: boolean,
 }
 
 export class WaveConnector extends Connector {
@@ -34,7 +36,9 @@ export class WaveConnector extends Connector {
     }
 
     connect() {
-        this.connection = new EventSourceConnection(this.options.endpoint, this.options.request);
+        this.connection = new EventSourceConnection(this.options.endpoint, this.options.request, {
+            pauseInactive: this.options.pauseInactive,
+        });
     }
 
     public channel(channel: string): WaveChannel {

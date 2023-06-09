@@ -1,19 +1,22 @@
 {
   "name": "laravel-wave",
-  "version": "0.6.0",
-  "description": "Event Source adapter for Laravel broadcasting system.",
+  "version": "0.7.0",
+  "description": "Server-sent event client for Laravel broadcasting system.",
   "keywords": [
     "laravel",
+    "echo",
+    "wave",
     "sse",
     "event source",
     "broadcasting",
     "real-time",
-    "live-update"
+    "live-update",
+    "server-sent"
   ],
-  "homepage": "https://github.com/qruto/laravel-wave-js",
+  "homepage": "https://github.com/qruto/laravel-wave-client",
   "repository": {
     "type": "git",
-    "url": "https://github.com/qruto/laravel-wave-js"
+    "url": "https://github.com/qruto/laravel-wave-client"
   },
   "scripts": {
     "build": "npm run compile && npm run declarations",

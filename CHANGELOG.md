@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased](https://github.com/qruto/laravel-wave-js/compare/v0.6.0...main)
+## [Unreleased](https://github.com/qruto/laravel-wave-client/compare/v0.7.0...main)
 
 ## 0.5.1 - 2022-08-02
 

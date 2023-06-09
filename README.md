@@ -20,8 +20,8 @@
 <p align="center">Bring <strong>live</strong> to your application</p>
 
 <p align="center">
-    <a href="https://github.com/qruto/laravel-wave-js/actions/workflows/tests.yml"><img src="https://github.com/qruto/laravel-wave-js/actions/workflows/tests.yml/badge.svg" alt="Build Status"></a>
-    <a href="https://github.com/qruto/laravel-wave-js/actions/workflows/codeql-analysis.yml"><img src="https://github.com/qruto/laravel-wave-js/actions/workflows/codeql-analysis.yml/badge.svg" alt="Code Quality"></a>
+    <a href="https://github.com/qruto/laravel-wave-client/actions/workflows/tests.yml"><img src="https://github.com/qruto/laravel-wave-client/actions/workflows/tests.yml/badge.svg" alt="Build Status"></a>
+    <a href="https://github.com/qruto/laravel-wave-client/actions/workflows/codeql-analysis.yml"><img src="https://github.com/qruto/laravel-wave-client/actions/workflows/codeql-analysis.yml/badge.svg" alt="Code Quality"></a>
     <a href="https://www.npmjs.com/package/laravel-wave"><img src="https://img.shields.io/npm/dt/laravel-wave" alt="Total Downloads"></a>
     <a href="https://www.npmjs.com/package/laravel-wave"><img src="https://img.shields.io/npm/v/laravel-wave" alt="Latest Stable Version"></a>
 </p>

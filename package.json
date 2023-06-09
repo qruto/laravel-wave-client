@@ -1,6 +1,6 @@
 {
   "name": "laravel-wave",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Server-sent event client for Laravel broadcasting system.",
   "keywords": [
     "laravel",

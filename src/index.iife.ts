@@ -1,1 +1,1 @@
-export { default } from './wave';
+export { Wave, WaveConnector } from './wave';

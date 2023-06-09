@@ -24,7 +24,7 @@ export class EventSourceConnection {
         options = {
             reconnect: true,
             pauseInactive: false,
-            debug: true,
+            debug: false,
             ...options,
         }
 

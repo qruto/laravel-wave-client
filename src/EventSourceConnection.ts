@@ -8,6 +8,8 @@ interface Options {
     reconnect?: boolean;
 
     pauseInactive?: boolean;
+
+    debug?: boolean;
 }
 
 export class EventSourceConnection {
@@ -18,7 +20,14 @@ export class EventSourceConnection {
     protected ctrl: AbortController;
     protected sourcePromise: Promise<void>;
 
-    constructor(endpoint: string, request?: RequestInit, options: Options = { reconnect: true }) {
+    constructor(endpoint: string, request?: RequestInit, options?: Options) {
+        options = {
+            reconnect: true,
+            pauseInactive: false,
+            debug: true,
+            ...options,
+        }
+
         this.ctrl = new AbortController();
 
         let formattedHeaders: Record<string, string> = {};
@@ -60,6 +69,10 @@ export class EventSourceConnection {
             onmessage: (message) => {
                 // if the server emits an error message, throw an exception
                 // so it gets handled by the onerror callback below:
+                if (options.debug) {
+                    debugEvent(message);
+                }
+
                 if (message.event === 'connected') {
                     this.id = message.data;
 
@@ -69,7 +82,9 @@ export class EventSourceConnection {
 
                     this.reconnecting = false;
 
-                    console.log('Wave connected.');
+                    if (options.debug) {
+                        console.log('Wave connected.');
+                    }
 
                     return;
                 }
@@ -78,7 +93,9 @@ export class EventSourceConnection {
             },
             onclose: () => {
                  if (this.ctrl.signal.aborted || !options.reconnect) {
-                    console.log('Wave disconnected.');
+                     if (options.debug) {
+                         console.log('Wave disconnected.');
+                     }
                     return;
                  }
                 // if the server closes the connection unexpectedly, retry:
@@ -91,7 +108,9 @@ export class EventSourceConnection {
                     // do nothing to automatically retry. You can also
                     // return a specific retry interval here.
                     this.reconnecting = true;
-                    console.log('Wave reconnecting...');
+                    if (options.debug) {
+                        console.log('Wave reconnecting...');
+                    }
                 }
             },
         });
@@ -140,4 +159,35 @@ export class EventSourceConnection {
     public afterConnect(callback: (connectionId) => void) {
         this.afterConnectCallbacks.push(callback);
     }
+}
+
+
+function debugEvent(message) {
+    let data = message.data;
+
+    try {
+        // Attempt to parse as JSON
+        let parsedData = JSON.parse(data);
+        // If successful, replace the data with the stringified parsed data
+        data = JSON.stringify(parsedData, null, 2);
+    } catch (error) {
+        // If it's not valid JSON, just leave the data as it is
+    }
+
+    const now = new Date();
+
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+    console.group(`Received server event ${hours}:${minutes}:${seconds}`);
+    console.table({
+        [message.id]: {
+            event: message.event,
+            data,
+            retry: message.retry,
+        }
+    });
+    console.log('Parsed data', JSON.parse(message.data));
+    console.groupEnd();
 }

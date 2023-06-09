@@ -24,6 +24,8 @@ export interface Options {
     request?: RequestInit,
 
     pauseInactive?: boolean,
+
+    debug?: boolean,
 }
 
 export class WaveConnector extends Connector {
@@ -38,6 +40,7 @@ export class WaveConnector extends Connector {
     connect() {
         this.connection = new EventSourceConnection(this.options.endpoint, this.options.request, {
             pauseInactive: this.options.pauseInactive,
+            debug: this.options.debug,
         });
     }
 

@@ -19,10 +19,7 @@ export class Wave {
 
     constructor(options?: Options) {
         this.options = { ...this.options, ...options };
-        this.connection = new EventSourceConnection(this.options.endpoint, this.options.request, {
-            pauseInactive: this.options.pauseInactive,
-            debug: this.options.debug,
-        });
+        this.connection = new EventSourceConnection(this.options.endpoint, this.options);
     }
 
     public model(model: string, key: string) {

@@ -28,6 +28,7 @@ function prepareRequest(
     };
 
     return {
+        method,
         headers: headers,
         body: JSON.stringify(data || {}),
         keepalive: keepAlive,

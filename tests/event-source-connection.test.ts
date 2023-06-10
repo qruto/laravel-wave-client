@@ -34,7 +34,7 @@ test('some-event unsubscribe', async () => {
 
   await prepare(
       (resolve) => {
-          const connection = new EventSourceConnection('/wave', {}, { reconnect: false});
+          const connection = new EventSourceConnection('/wave', { reconnect: false});
 
           connection.subscribe('some-event', () => resolve(listener()));
           connection.unsubscribe('some-event');
@@ -58,7 +58,7 @@ test('some-event remove listener', async () => {
           resolve(listener());
         };
 
-        const connection = new EventSourceConnection('/wave', {}, { reconnect: false});
+        const connection = new EventSourceConnection('/wave', { reconnect: false});
 
         connection.subscribe('some-event', callback);
         connection.removeListener('some-event', callback);

@@ -1,16 +1,9 @@
 import { EventSourceMessage, fetchEventSource } from '@microsoft/fetch-event-source';
+import { Options } from './echo-broadcaster/wave-connector'
 
 class RetriableError extends Error { }
 
 class FatalError extends Error { }
-
-interface Options {
-    reconnect?: boolean;
-
-    pauseInactive?: boolean;
-
-    debug?: boolean;
-}
 
 export class EventSourceConnection {
     protected id: string;
@@ -20,7 +13,7 @@ export class EventSourceConnection {
     protected ctrl: AbortController;
     protected sourcePromise: Promise<void>;
 
-    constructor(endpoint: string, request?: RequestInit, options?: Options) {
+    constructor(endpoint: string, options?: Options) {
         options = {
             reconnect: true,
             pauseInactive: false,
@@ -32,26 +25,37 @@ export class EventSourceConnection {
 
         let formattedHeaders: Record<string, string> = {};
 
-        if (request?.headers) {
-            if (request.headers instanceof Headers) {
-                request.headers.forEach((value, key) => {
+        if (options.request?.headers) {
+            if (options.request.headers instanceof Headers) {
+                options.request.headers.forEach((value, key) => {
                     formattedHeaders[key] = value;
                 });
-            } else if (Array.isArray(request.headers)) {
-                formattedHeaders = Object.fromEntries(request.headers);
+            } else if (Array.isArray(options.request.headers)) {
+                formattedHeaders = Object.fromEntries(options.request.headers);
             } else {
-                formattedHeaders = request.headers;
+                formattedHeaders = options.request.headers;
             }
         }
+
+        let csrfToken =  '';
+
+        if (typeof document !== 'undefined' && options.auth?.headers['X-CSRF-TOKEN'] === undefined) {
+            const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+            csrfToken = match ? decodeURIComponent(match[3]) : null;
+        }
+
+        const csrfTokenHeader = csrfToken ? {'X-XSRF-TOKEN': csrfToken} : {}
 
         this.sourcePromise = fetchEventSource(endpoint, {
              signal: this.ctrl.signal,
             ...{
-                ...request,
+                ...options.request,
                 headers: {
                     'Cache-Control': 'no-cache',
                     'Pragma': 'no-cache',
                     'Connection': 'keep-alive',
+                    ...options.auth?.headers,
+                    ...csrfTokenHeader,
                     ...formattedHeaders,
                 }
             },

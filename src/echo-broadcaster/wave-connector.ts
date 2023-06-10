@@ -7,21 +7,23 @@ import WavePrivateChannel from './wave-private-channel';
 import WavePresenceChannel from './wave-presence-channel';
 
 export interface Options {
-    endpoint: string,
+    endpoint?: string,
 
-    namespace: string,
+    namespace?: string,
 
-    auth: {
+    auth?: {
         headers: Record<string, string>,
     },
 
-    authEndpoint: string,
+    authEndpoint?: string,
 
     csrfToken?: string,
 
     bearerToken?: string,
 
     request?: RequestInit,
+
+    reconnect?: boolean;
 
     pauseInactive?: boolean,
 
@@ -38,10 +40,7 @@ export class WaveConnector extends Connector {
     }
 
     connect() {
-        this.connection = new EventSourceConnection(this.options.endpoint, this.options.request, {
-            pauseInactive: this.options.pauseInactive,
-            debug: this.options.debug,
-        });
+        this.connection = new EventSourceConnection(this.options.endpoint, this.options);
     }
 
     public channel(channel: string): WaveChannel {

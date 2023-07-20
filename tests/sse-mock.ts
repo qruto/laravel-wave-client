@@ -77,6 +77,7 @@ export function mockEventSource() {
                 },
             });
         });
+
         Object.defineProperty(global, 'window', {
             writable: true,
             value: {

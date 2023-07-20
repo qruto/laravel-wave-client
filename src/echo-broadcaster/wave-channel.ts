@@ -77,6 +77,10 @@ export default class WaveChannel extends Channel {
         return this;
     }
 
+    public subscribe(): void {
+        return;
+    }
+
     public unsubscribe(): void {
         this.events.forEach(event => {
             this.connection.unsubscribe(`${this.name}.${event}`);
@@ -85,8 +89,8 @@ export default class WaveChannel extends Channel {
         this.events = [];
     }
 
-    subscribed(callback: Function): WaveChannel {
-        this.connection.afterConnect(callback as (connectionId: string) => void);
+    subscribed(callback: (id: string) => void): WaveChannel {
+        this.connection.on('connected', callback)
 
         return this;
     }

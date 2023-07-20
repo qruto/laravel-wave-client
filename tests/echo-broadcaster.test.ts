@@ -18,7 +18,7 @@ beforeEach(async () => {
         broadcaster: WaveConnector
     });
 
-    await fireEvent('connected', 'some-random-key');
+    await fireEvent('general.connected', 'some-random-key');
 })
 
 test('echo public event', async () => {
@@ -42,7 +42,9 @@ test('echo private event', async () => {
                     resolve(data);
                 });
         },
-        () => fireEvent('private-chat.' + eventFormatter.format('NewMessage'), { text: 'foo' })
+        () => {
+            return fireEvent('private-chat.' + eventFormatter.format('NewMessage'), { text: 'foo' });
+        }
     );
 
     expect(result).toEqual({ text: 'foo' });

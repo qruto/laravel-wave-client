@@ -8,9 +8,9 @@ mockEventSource();
 test('create event source connection', async () => {
   const connectionId = await prepare(
       (resolve) => {
-        (new EventSourceConnection('/wave')).afterConnect((id: string) => resolve(id));
+        (new EventSourceConnection('/wave')).on('connected', (id: string) => resolve(id));
       },
-      () => fireEvent('connected', 'some-random-key')
+      () => fireEvent('general.connected', 'some-random-key')
   );
 
   expect(connectionId).toBe('some-random-key');
@@ -34,7 +34,7 @@ test('some-event unsubscribe', async () => {
 
   await prepare(
       (resolve) => {
-          const connection = new EventSourceConnection('/wave', { reconnect: false});
+          const connection = new EventSourceConnection('/wave', undefined, false);
 
           connection.subscribe('some-event', () => resolve(listener()));
           connection.unsubscribe('some-event');
@@ -58,7 +58,7 @@ test('some-event remove listener', async () => {
           resolve(listener());
         };
 
-        const connection = new EventSourceConnection('/wave', { reconnect: false});
+        const connection = new EventSourceConnection('/wave', undefined, false);
 
         connection.subscribe('some-event', callback);
         connection.removeListener('some-event', callback);

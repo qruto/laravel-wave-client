@@ -9,7 +9,7 @@ let wave: Wave;
 beforeEach(async () => {
     wave = new Wave();
 
-    await fireEvent('connected', 'some-random-key');
+    await fireEvent('general.connected', 'some-random-key');
 })
 
 test('notification listener', async () => {

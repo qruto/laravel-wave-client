@@ -3,6 +3,41 @@ import { Options } from '../echo-broadcaster/wave-connector';
 
 type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
 
+export function prepareHeaders(options?: Options) {
+    let csrfToken =  '';
+
+    const authHeaders = options?.auth?.headers ?? {};
+    const requestHeaders = options?.request?.headers ?? {};
+
+    if (typeof document !== 'undefined' && typeof authHeaders['X-CSRF-TOKEN'] === 'undefined') {
+        const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+        csrfToken = match ? decodeURIComponent(match[3]) : null;
+    }
+
+    const csrfTokenHeader = csrfToken && typeof authHeaders['X-CSRF-TOKEN'] === 'undefined' ?
+        {'X-XSRF-TOKEN': csrfToken} : {}
+
+    let formattedHeaders: Record<string, string> = {};
+
+    if (typeof requestHeaders !== 'undefined') {
+        if (requestHeaders instanceof Headers) {
+            requestHeaders.forEach((value, key) => {
+                formattedHeaders[key] = value;
+            });
+        } else if (Array.isArray(requestHeaders)) {
+            formattedHeaders = Object.fromEntries(requestHeaders);
+        } else {
+            formattedHeaders = requestHeaders;
+        }
+    }
+
+    return {
+        ...authHeaders,
+        ...csrfTokenHeader,
+        ...formattedHeaders,
+    }
+}
+
 function prepareRequest(
     connectionId: string,
     method: HTTPMethod,
@@ -10,29 +45,22 @@ function prepareRequest(
     data?: object,
     keepAlive = false
 ): RequestInit {
-    let csrfToken =  '';
-
-    if (typeof document !== 'undefined' && options.auth.headers['X-CSRF-TOKEN'] === undefined) {
-        const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
-        csrfToken = match ? decodeURIComponent(match[3]) : null;
-    }
-
-    const csrfTokenHeader = csrfToken ? {'X-XSRF-TOKEN': csrfToken} : {}
 
     const headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'X-Socket-Id': connectionId,
-        ...options.auth.headers,
-        ...csrfTokenHeader,
+        ...prepareHeaders(options),
     };
 
     return {
         method,
-        headers: headers,
-        body: JSON.stringify(data || {}),
-        keepalive: keepAlive,
         ...options.request,
+        headers: headers,
+        ...(typeof data === 'undefined' ? {} : {
+            body: JSON.stringify(data)
+        }),
+        keepalive: keepAlive,
     };
 }
 
@@ -43,11 +71,9 @@ export default function request(connection: EventSourceConnection, keepAlive = f
             prepareRequest(connectionId, method, options, data, keepAlive)
         );
 
-        return typeof connection.getId() === 'undefined' ? new Promise((resolve) => {
-            connection.afterConnect((connectionId) => {
-                resolve(fetchRequest(connectionId));
-            });
-        }) : fetchRequest(connection.getId());
+        return typeof connection.getId() === 'undefined'
+            ? new Promise((resolve) => connection.once('connected', id => resolve(fetchRequest(id))))
+            : fetchRequest(connection.getId());
     }
 
     const factory =

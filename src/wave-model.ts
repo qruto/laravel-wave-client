@@ -1,5 +1,5 @@
 import { EventSourceConnection } from "./EventSourceConnection";
-import { authRequest, AuthRequest } from "./channel-auth";
+import { authRequest } from "./channel-auth";
 import { Options } from './echo-broadcaster/wave-connector';
 
 const authMethods = [
@@ -18,10 +18,10 @@ export class WaveModel {
     public key: string;
     protected connection: EventSourceConnection;
     protected channel: string;
-    protected auth: AuthRequest;
+    protected auth: Promise<Response>;
     private callbackMap: Map<Function, Function> = new Map();
     private notificationCallbacks: Record<string, Set<Function>> = {};
-    private options: Options;
+    private readonly options: Options;
 
     constructor(
         name: string,
@@ -46,7 +46,7 @@ export class WaveModel {
 
                 if (authMethods.includes(prop)) {
                     return (...args) => {
-                        this.auth.after(() => value.apply(this, args));
+                        this.auth.then(() => value.apply(this, args));
 
                         return eventHandlerProxy;
                     };

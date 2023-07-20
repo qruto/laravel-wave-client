@@ -9,21 +9,19 @@ import WavePresenceChannel from './wave-presence-channel';
 export interface Options {
     endpoint?: string,
 
-    namespace?: string,
+    namespace: string,
 
     auth?: {
         headers: Record<string, string>,
     },
 
-    authEndpoint?: string,
+    authEndpoint: string,
 
     csrfToken?: string,
 
     bearerToken?: string,
 
     request?: RequestInit,
-
-    reconnect?: boolean;
 
     pauseInactive?: boolean,
 
@@ -41,6 +39,12 @@ export class WaveConnector extends Connector {
 
     connect() {
         this.connection = new EventSourceConnection(this.options.endpoint, this.options);
+
+        this.connection.on('reconnect', () => {
+            for (let name in this.channels) {
+                this.channels[name].subscribe();
+            }
+        });
     }
 
     public channel(channel: string): WaveChannel {

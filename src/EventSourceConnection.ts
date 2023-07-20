@@ -1,21 +1,35 @@
-import { EventSourceMessage, fetchEventSource } from '@microsoft/fetch-event-source';
+import { EventSourceMessage, fetchEventSource } from '@qruto/fetch-event-source';
+
 import { Options } from './echo-broadcaster/wave-connector'
+import { prepareHeaders } from './util/request';
+import EventEmitter from './util/event-emmiter';
 
 class RetriableError extends Error { }
 
 class FatalError extends Error { }
 
+interface EventMap {
+    connected: [id: string];
+    open: [response: Response];
+    reconnect: [];
+    close: [];
+}
+
 export class EventSourceConnection {
     protected id: string;
+
     protected listeners: Record<string, Map<Function, (message: EventSourceMessage) => void>> = {};
-    protected afterConnectCallbacks: ((connectionId) => void)[] = [];
+
     protected reconnecting = false;
+
     protected ctrl: AbortController;
+
     protected sourcePromise: Promise<void>;
 
-    constructor(endpoint: string, options?: Options) {
+    protected bus = new EventEmitter<EventMap>();
+
+    constructor(endpoint: string, options?: Options, reconnect = true) {
         options = {
-            reconnect: true,
             pauseInactive: false,
             debug: false,
             ...options,
@@ -23,44 +37,27 @@ export class EventSourceConnection {
 
         this.ctrl = new AbortController();
 
-        let formattedHeaders: Record<string, string> = {};
+        let headers = {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Connection': 'keep-alive',
+            ...prepareHeaders(options),
+        };
 
-        if (options.request?.headers) {
-            if (options.request.headers instanceof Headers) {
-                options.request.headers.forEach((value, key) => {
-                    formattedHeaders[key] = value;
-                });
-            } else if (Array.isArray(options.request.headers)) {
-                formattedHeaders = Object.fromEntries(options.request.headers);
-            } else {
-                formattedHeaders = options.request.headers;
-            }
-        }
+        this.sourcePromise = this.create(endpoint, options, headers, reconnect);
+    }
 
-        let csrfToken =  '';
-
-        if (typeof document !== 'undefined' && options.auth?.headers['X-CSRF-TOKEN'] === undefined) {
-            const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
-            csrfToken = match ? decodeURIComponent(match[3]) : null;
-        }
-
-        const csrfTokenHeader = csrfToken ? {'X-XSRF-TOKEN': csrfToken} : {}
-
-        this.sourcePromise = fetchEventSource(endpoint, {
-             signal: this.ctrl.signal,
+    private create(endpoint: string, options: Options, headers: Record<string, string>, reconnect: boolean) {
+        return fetchEventSource(endpoint, {
+            signal: this.ctrl.signal,
             ...{
                 ...options.request,
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache',
-                    'Connection': 'keep-alive',
-                    ...options.auth?.headers,
-                    ...csrfTokenHeader,
-                    ...formattedHeaders,
-                }
+                headers: headers
             },
             openWhenHidden: typeof options.pauseInactive === 'undefined' ? true : !options.pauseInactive,
-            async onopen(response) {
+            onopen: async (response) => {
+                this.bus.emit('open', response);
+
                 if (response.ok && response.headers.get('content-type').startsWith('text/event-stream')) {
                     return; // everything's good
                 } else if (response.status >= 400 && response.status < 500 && response.status !== 429) {
@@ -77,14 +74,16 @@ export class EventSourceConnection {
                     debugEvent(message);
                 }
 
-                if (message.event === 'connected') {
+                // TODO: possibly change name of this event
+
+                if (message.event === 'general.connected') {
+
                     this.id = message.data;
-
-                    if (!this.reconnecting) {
-                        this.afterConnectCallbacks.forEach(callback => callback(this.id));
-                    }
-
                     this.reconnecting = false;
+
+                    headers['X-Socket-Id'] = this.id;
+
+                    this.bus.emit('connected', this.id);
 
                     if (options.debug) {
                         console.log('Wave connected.');
@@ -96,12 +95,15 @@ export class EventSourceConnection {
                 this.listeners[message.event]?.forEach(listener => listener({ ...message }));
             },
             onclose: () => {
-                 if (this.ctrl.signal.aborted || !options.reconnect) {
-                     if (options.debug) {
-                         console.log('Wave disconnected.');
-                     }
+                if (this.ctrl.signal.aborted || !reconnect) {
+                    if (options.debug) {
+                        console.log('Wave disconnected.');
+                    }
+
+                    this.bus.emit('close');
+
                     return;
-                 }
+                }
                 // if the server closes the connection unexpectedly, retry:
                 throw new RetriableError();
             },
@@ -112,6 +114,10 @@ export class EventSourceConnection {
                     // do nothing to automatically retry. You can also
                     // return a specific retry interval here.
                     this.reconnecting = true;
+                    this.id = undefined;
+
+                    this.bus.emit('reconnect');
+
                     if (options.debug) {
                         console.log('Wave reconnecting...');
                     }
@@ -160,11 +166,18 @@ export class EventSourceConnection {
         this.ctrl.abort('disconnect');
     }
 
-    public afterConnect(callback: (connectionId) => void) {
-        this.afterConnectCallbacks.push(callback);
+    public on<K extends keyof EventMap>(event: K, callback: (...args: EventMap[K]) => void) {
+        this.bus.on(event, callback);
+    }
+
+    public off<K extends keyof EventMap>(event: K, callback: (...args: EventMap[K]) => void) {
+        this.bus.off(event, callback);
+    }
+
+    public once<K extends keyof EventMap>(event: K, callback: (...args: EventMap[K]) => void) {
+        this.bus.once(event, callback);
     }
 }
-
 
 function debugEvent(message) {
     let data = message.data;

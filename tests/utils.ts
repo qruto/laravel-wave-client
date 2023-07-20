@@ -1,4 +1,4 @@
-import { EventSourceMessage } from '@microsoft/fetch-event-source';
+import { EventSourceMessage } from '@qruto/fetch-event-source';
 
 import { events, streamChunkResolve, setEventResolve, setStreamChunkResolve } from './sse-mock';
 
@@ -55,9 +55,7 @@ export function prepare<T>(setupCallback: PromiseResolver<T>, afterConnectCallba
         setupCallback(resolve);
 
         if (typeof afterConnectCallback === 'function') {
-            // setImmediate(() => afterConnectCallback(resolve));
             Promise.resolve().then(() => afterConnectCallback(resolve));
-            // afterConnectCallback(value => Promise.resolve(value).then(resolve));
         }
     });
 }

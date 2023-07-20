@@ -27,7 +27,7 @@ export default [
             { file: './dist/wave.common.js', format: 'cjs' },
         ],
         plugins,
-        external: ['laravel-echo', '@microsoft/fetch-event-source'],
+        external: ['laravel-echo', '@qruto/fetch-event-source'],
     },
     {
         input: './src/index.iife.ts',
@@ -36,11 +36,11 @@ export default [
             format: 'iife',
             name: 'Wave',
             globals: {
-                '@microsoft/fetch-event-source': 'fetchEventSource',
+                '@qruto/fetch-event-source': 'fetchEventSource',
                 'laravel-echo': 'Echo',
             },
         }],
         plugins,
-        external: ['laravel-echo', '@microsoft/fetch-event-source'],
+        external: ['laravel-echo', '@qruto/fetch-event-source'],
     },
 ];

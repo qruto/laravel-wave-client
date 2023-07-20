@@ -64,6 +64,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@microsoft/fetch-event-source": "^2.0.1"
+    "@qruto/fetch-event-source": "^2.0.2"
   }
 }

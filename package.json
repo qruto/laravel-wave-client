@@ -24,7 +24,7 @@
     "watch": "./node_modules/.bin/rollup --config --watch",
     "declarations": "./node_modules/.bin/tsc --emitDeclarationOnly",
     "lint": "eslint --ext .js,.ts ./src",
-    "release": "npm run test && git push --follow-tags && npm publish",
+    "release": "npm run build && npm run lint && npm run test && git push --follow-tags && npm publish",
     "test": "jest"
   },
   "author": "slavarazum",

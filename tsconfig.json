@@ -4,7 +4,7 @@
         "module": "es6",
         "moduleResolution": "node",
         "outDir": "./dist",
-        "sourceMap": false,
+        "sourceMap": true,
         "target": "es6",
         "isolatedModules": false,
         "esModuleInterop": true,

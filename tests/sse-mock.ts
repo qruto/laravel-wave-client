@@ -50,7 +50,7 @@ export function mockEventSource() {
                     ok: true,
                     headers: new Headers({ 'content-type': 'application/json' }),
                     status: 200,
-                    json: () => Promise.resolve(['rick', 'morty']),
+                    json: () => Promise.resolve({_token: null, users: ['rick', 'morty']}),
                 });
             }
 

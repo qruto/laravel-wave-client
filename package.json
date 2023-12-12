@@ -24,14 +24,19 @@
     "watch": "./node_modules/.bin/rollup --config --watch",
     "declarations": "./node_modules/.bin/tsc --emitDeclarationOnly",
     "lint": "eslint --ext .js,.ts ./src",
-    "prepublish": "npm run build",
-    "release": "npm run test && standard-version && git push --follow-tags && npm publish",
+    "release": "npm run test && git push --follow-tags && npm publish",
     "test": "jest"
   },
   "author": "slavarazum",
   "main": "dist/wave.common.js",
   "module": "dist/wave.js",
   "types": "dist/wave.d.ts",
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "LICENSE.md"
+  ],
   "devDependencies": {
     "@babel/plugin-proposal-decorators": "^7.18.2",
     "@babel/plugin-proposal-export-namespace-from": "^7.17.12",
@@ -51,7 +56,6 @@
     "node-ray": "^1.18.0",
     "rollup": "^2.75.5",
     "rollup-plugin-typescript2": "^0.32.0",
-    "standard-version": "^9.3.2",
     "ts-jest": "^28.0.4",
     "tslib": "^2.4.0",
     "typescript": "^4.7.2"

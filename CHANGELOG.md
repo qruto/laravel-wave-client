@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased](https://github.com/qruto/laravel-wave-client/compare/0.7.3...main)
+## [Unreleased](https://github.com/qruto/laravel-wave-client/compare/0.8.0...main)
 
 ## 0.5.1 - 2022-08-02
 
@@ -11,6 +11,10 @@ Fixed IIFE build
 First release  🎉 Works well in the home environment, but should be battle tested before **1.0**.
 
 Checkout ➡️ [README](https://github.com/qruto/laravel-wave/blob/main/README.md).
+
+## [0.8.0](https://github.com/qruto/laravel-wave-client/compare/0.7.3...0.8.0) - 2023-12-12
+
+Fixed several bugs with presence channel state management.
 
 ## [0.7.3](https://github.com/qruto/laravel-wave-client/compare/0.7.2...0.7.3) - 2023-07-20
 

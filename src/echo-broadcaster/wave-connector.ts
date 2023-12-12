@@ -1,4 +1,4 @@
-import { Connector } from '../echo/connector';
+import { Connector } from 'laravel-echo';
 
 import { EventSourceConnection } from '../EventSourceConnection';
 

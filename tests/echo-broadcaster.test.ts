@@ -1,7 +1,7 @@
 import { prepare, fireEvent } from "./utils";
 import Echo from "laravel-echo";
 import { WaveConnector } from "../src/echo-broadcaster/wave-connector";
-import { EventFormatter } from "../src/echo/event-formatter";
+import { EventFormatter } from "laravel-echo";
 
 import { mockEventSource } from './sse-mock';
 
@@ -109,10 +109,13 @@ test('echo presence channel unsubscribe', async () => {
     await prepare(
         (resolve) => {
             echo.join('chat').listen('NewMessage', () => resolve(listener()));
+            echo.join('chat').unsubscribe();
         },
         async (resolve) => {
-            await echo.join('chat').unsubscribe();
-            await fireEvent('presence-chat.' + eventFormatter.format('NewMessage'), { text: 'foo' });
+            Promise.resolve().then(async () => {
+                await fireEvent('presence-chat.' + eventFormatter.format('NewMessage'), { text: 'foo' });
+            });
+
             resolve(null);
         }
     );

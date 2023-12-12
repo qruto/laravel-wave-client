@@ -1,7 +1,7 @@
 {
   "name": "laravel-wave",
   "version": "0.7.3",
-  "description": "Server-sent event client for Laravel broadcasting system.",
+  "description": "Server-sent event driver for Laravel Echo and broadcasting system.",
   "keywords": [
     "laravel",
     "echo",

@@ -3,25 +3,40 @@ import { Options } from '../echo-broadcaster/wave-connector';
 
 type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
 
-export function prepareHeaders(options?: Options) {
-    let csrfToken =  '';
-
-    const authHeaders = options?.auth?.headers ?? {};
-    const requestHeaders = options?.request?.headers ?? {};
-
-    if (typeof document !== 'undefined' && typeof authHeaders['X-CSRF-TOKEN'] === 'undefined') {
+export function getXsrfTokenFromCookie(): string {
+    if (typeof document !== 'undefined') {
         const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
-        csrfToken = match ? decodeURIComponent(match[3]) : null;
+        return match ? decodeURIComponent(match[3]) : null;
     }
 
-    const csrfTokenHeader = csrfToken && typeof authHeaders['X-CSRF-TOKEN'] === 'undefined' ?
-        {'X-XSRF-TOKEN': csrfToken} : {}
+    return '';
+}
 
-    let formattedHeaders: Record<string, string> = {};
+export function prepareHeaders(options?: Options) {
+    const authHeaders = options?.auth?.headers ?? {};
+
+    const csrfTokenHeader = {};
+
+    if (options.csrfToken) {
+        csrfTokenHeader['X-CSRF-TOKEN'] = options.csrfToken;
+    } else if (typeof authHeaders['X-CSRF-TOKEN'] !== 'undefined') {
+        csrfTokenHeader['X-CSRF-TOKEN'] = authHeaders['X-CSRF-TOKEN'];
+    } else {
+        const token = getXsrfTokenFromCookie();
+
+        if (token) {
+            csrfTokenHeader['X-XSRF-TOKEN'] = token;
+        }
+    }
+
+    let formattedHeaders: Record<string, string> | Headers = {};
+
+    const requestHeaders = options?.request?.headers ?? {};
 
     if (typeof requestHeaders !== 'undefined') {
+
         if (requestHeaders instanceof Headers) {
-            requestHeaders.forEach((value, key) => {
+            (requestHeaders as Headers).forEach((value, key) => {
                 formattedHeaders[key] = value;
             });
         } else if (Array.isArray(requestHeaders)) {
@@ -32,7 +47,7 @@ export function prepareHeaders(options?: Options) {
     }
 
     return {
-        ...authHeaders,
+        ...options?.auth?.headers ?? {},
         ...csrfTokenHeader,
         ...formattedHeaders,
     }
@@ -57,7 +72,7 @@ function prepareRequest(
         method,
         ...options.request,
         headers: headers,
-        ...(typeof data === 'undefined' ? {} : {
+        ...(typeof data === 'undefined' || method === 'GET' ? {} : {
             body: JSON.stringify(data)
         }),
         keepalive: keepAlive,
@@ -66,8 +81,19 @@ function prepareRequest(
 
 export default function request(connection: EventSourceConnection, keepAlive = false) {
     function create(method: HTTPMethod, route: string, options: Options, data?: object): Promise<Response> {
+        let uri = route;
+
+        if (method === 'GET' && typeof data !== 'undefined') {
+            const params = new URLSearchParams();
+            for (const [key, value] of Object.entries(data)) {
+                params.append(key, value as string);
+            }
+
+            uri += '?' + params.toString();
+        }
+
         const fetchRequest = (connectionId) => window.fetch(
-            route,
+            uri,
             prepareRequest(connectionId, method, options, data, keepAlive)
         );
 
@@ -87,4 +113,15 @@ export default function request(connection: EventSourceConnection, keepAlive = f
         put: factory('PUT'),
         delete: factory('DELETE'),
     }
+}
+
+export function beacon(connectionId: string, csrfToken: string, route: string, data?: object, method = 'POST'): void {
+    navigator.sendBeacon(
+        route,
+        new Blob([JSON.stringify(Object.assign(data ?? {}, {
+            socket_id: connectionId,
+            _token: csrfToken,
+            _method: method,
+        }))], { type: 'application/json' })
+    );
 }

@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased](https://github.com/qruto/laravel-wave-client/compare/0.8.0...main)
+## [Unreleased](https://github.com/qruto/laravel-wave-client/compare/0.8.1...main)
+
+## [0.8.1](https://github.com/qruto/laravel-wave-client/compare/0.8.0...0.8.1) - 2024-06-30
+
+Make `authEndpoint` optional
 
 ## [0.8.0](https://github.com/qruto/laravel-wave-client/compare/0.7.3...0.8.0) - 2023-12-12
 

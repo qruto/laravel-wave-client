@@ -15,7 +15,7 @@ export interface Options {
         headers: Record<string, string>,
     },
 
-    authEndpoint: string,
+    authEndpoint?: string,
 
     csrfToken?: string,
 

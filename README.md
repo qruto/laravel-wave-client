@@ -47,7 +47,7 @@ Experience it live with our [demo streaming tweets](https://wave.qruto.dev) 🐤
 
 ## Support
 
-We're a couple of Ukrainians starting a new life in France. If you find our work useful, consider [sponsoring us on GitHub](https://github.com/sponsors/qruto) 💛
+We're a couple of Ukrainians starting a new life in France, and right now we really need help. Any amount means a lot — [sponsor us on GitHub](https://github.com/sponsors/qruto) 💛
 
 ## Documentation
 

@@ -47,18 +47,27 @@ export default class WaveChannel extends Channel {
     /**
      * Listen for an event on the channel instance.
      */
-    listen(event, callback) {
+    listen(event: string, callback: CallableFunction): this {
         this.on(this.eventFormatter.format(event), callback);
 
         return this;
     }
+
     /**
      * Stop listening for an event on the channel instance.
      */
-    stopListening(event) {
+    stopListening(event: string, callback?: CallableFunction): this {
         const name = this.eventFormatter.format(event);
-        this.connection.unsubscribe(`${this.name}.${name}`);
-        this.events = this.events.filter(e => e !== name);
+
+        if (callback) {
+            this.connection.removeListener(`${this.name}.${name}`, callback);
+        } else {
+            this.connection.unsubscribe(`${this.name}.${name}`);
+        }
+
+        if (!this.connection.hasListeners(`${this.name}.${name}`)) {
+            this.events = this.events.filter(e => e !== name);
+        }
 
         return this;
     }
@@ -66,7 +75,7 @@ export default class WaveChannel extends Channel {
     /**
      * Bind the channel's socket to an event and store the callback.
      */
-    public on(event: string, callback: Function): WaveChannel {
+    public on(event: string, callback: CallableFunction): this {
         if (!this.events.find(e => e === event)) {
             this.events.push(event);
         }
@@ -88,13 +97,13 @@ export default class WaveChannel extends Channel {
         this.events = [];
     }
 
-    subscribed(callback: (id: string) => void): WaveChannel {
-        this.connection.on('connected', callback)
+    subscribed(callback: CallableFunction): this {
+        this.connection.on('connected', callback as (id: string) => void);
 
         return this;
     }
 
-    error(callback: Function): WaveChannel {
-        return callback();
+    error(_callback: CallableFunction): this {
+        return this;
     }
 }

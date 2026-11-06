@@ -74,3 +74,26 @@ test('some-event remove listener', async () => {
 
   expect(listener).not.toHaveBeenCalled();
 });
+
+test('connection status transitions', async () => {
+  const connection = new EventSourceConnection('/wave');
+  const changes: string[] = [];
+
+  expect(connection.getStatus()).toBe('connecting');
+
+  connection.on('status', (status) => { changes.push(status); });
+
+  await prepare(
+      (resolve) => {
+        connection.on('connected', () => resolve(null));
+      },
+      () => fireEvent('general.connected', 'some-random-key')
+  );
+
+  expect(connection.getStatus()).toBe('connected');
+
+  connection.disconnect();
+
+  expect(connection.getStatus()).toBe('disconnected');
+  expect(changes).toEqual(['connected', 'disconnected']);
+});

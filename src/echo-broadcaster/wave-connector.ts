@@ -1,4 +1,4 @@
-import { Connector } from 'laravel-echo';
+import { Connector, type ConnectionStatus } from 'laravel-echo';
 
 import { EventSourceConnection } from '../EventSourceConnection';
 
@@ -9,7 +9,7 @@ import WavePresenceChannel from './wave-presence-channel';
 export interface Options {
     endpoint?: string,
 
-    namespace: string,
+    namespace?: string | false,
 
     auth?: {
         headers: Record<string, string>,
@@ -28,13 +28,16 @@ export interface Options {
     debug?: boolean,
 }
 
-export class WaveConnector extends Connector {
+// Echo's `Broadcaster` map is a closed type alias, so third party drivers can't register
+// their own key. `null` is used as a type level placeholder: it carries the plain option
+// shape without any driver specific requirements like Pusher's `key` or `cluster`.
+export class WaveConnector extends Connector<'null', WaveChannel, WavePrivateChannel, WavePresenceChannel> {
     private connection: EventSourceConnection;
 
-    private channels: Record<string, WaveChannel | WavePresenceChannel> = {};
+    public channels: Record<string, WaveChannel | WavePresenceChannel> = {};
 
     constructor(options: Options) {
-        super({ endpoint: '/wave', ...options });
+        super({ broadcaster: 'null', endpoint: '/wave', ...options });
     }
 
     connect() {
@@ -96,5 +99,15 @@ export class WaveConnector extends Connector {
 
     socketId() {
         return this.connection.getId();
+    }
+
+    connectionStatus(): ConnectionStatus {
+        return this.connection.getStatus();
+    }
+
+    onConnectionChange(callback: (status: ConnectionStatus) => void): () => void {
+        this.connection.on('status', callback);
+
+        return () => this.connection.off('status', callback);
     }
 }

@@ -2,6 +2,18 @@
 
 ## [Unreleased](https://github.com/qruto/laravel-wave-client/compare/0.8.1...main)
 
+Support Laravel Echo **2.x** (`laravel-echo` `^2.5.0`).
+
+`WaveConnector` now implements Echo 2's connection status API: `Echo.connectionStatus()`
+and `connector.onConnectionChange(callback)` report `connecting`, `connected`,
+`reconnecting`, `failed` and `disconnected` states of the event stream.
+
+`Channel.stopListening(event, callback)` removes only the given callback instead of every
+listener of that event.
+
+Installing straight from the repository now works: a `prepare` script builds `dist` on
+install, and an `exports` map points ESM consumers at the ES module build.
+
 ## [0.8.1](https://github.com/qruto/laravel-wave-client/compare/0.8.0...0.8.1) - 2024-06-30
 
 Make `authEndpoint` optional

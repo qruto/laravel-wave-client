@@ -1,4 +1,5 @@
 import { EventSourceMessage, fetchEventSource } from '@qruto/fetch-event-source';
+import type { ConnectionStatus } from 'laravel-echo';
 
 import { Options } from './echo-broadcaster/wave-connector'
 import { prepareHeaders } from './util/request';
@@ -13,6 +14,7 @@ interface EventMap {
     open: [response: Response];
     reconnect: [];
     close: [];
+    status: [status: ConnectionStatus];
 }
 
 export class EventSourceConnection {
@@ -20,7 +22,7 @@ export class EventSourceConnection {
 
     protected listeners: Record<string, Map<Function, (message: EventSourceMessage) => void>> = {};
 
-    protected reconnecting = false;
+    protected status: ConnectionStatus = 'connecting';
 
     protected ctrl: AbortController;
 
@@ -79,7 +81,7 @@ export class EventSourceConnection {
                 if (message.event === 'general.connected') {
 
                     this.id = message.data;
-                    this.reconnecting = false;
+                    this.setStatus('connected');
 
                     headers['X-Socket-Id'] = this.id;
 
@@ -100,6 +102,8 @@ export class EventSourceConnection {
                         console.log('Wave disconnected.');
                     }
 
+                    this.setStatus('disconnected');
+
                     this.bus.emit('close');
 
                     return;
@@ -109,11 +113,13 @@ export class EventSourceConnection {
             },
             onerror: (err) => {
                 if (err instanceof FatalError || 'matcherResult' in err) {
+                    this.setStatus('failed');
+
                     throw err; // rethrow to stop the operation
                 } else {
                     // do nothing to automatically retry. You can also
                     // return a specific retry interval here.
-                    this.reconnecting = true;
+                    this.setStatus('reconnecting');
                     this.id = undefined;
 
                     this.bus.emit('reconnect');
@@ -128,6 +134,20 @@ export class EventSourceConnection {
 
     public getId() {
         return this.id;
+    }
+
+    public getStatus(): ConnectionStatus {
+        return this.status;
+    }
+
+    protected setStatus(status: ConnectionStatus) {
+        if (this.status === status) {
+            return;
+        }
+
+        this.status = status;
+
+        this.bus.emit('status', status);
     }
 
     public getSourcePromise() {
@@ -150,6 +170,10 @@ export class EventSourceConnection {
         delete this.listeners[event];
     }
 
+    public hasListeners(event: string): boolean {
+        return this.listeners[event] !== undefined;
+    }
+
     public removeListener(event: string, callback: Function) {
         if (!this.listeners[event] || !this.listeners[event].has(callback)) {
             return;
@@ -164,6 +188,8 @@ export class EventSourceConnection {
 
     public disconnect() {
         this.ctrl.abort('disconnect');
+
+        this.setStatus('disconnected');
     }
 
     public on<K extends keyof EventMap>(event: K, callback: (...args: EventMap[K]) => void) {

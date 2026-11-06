@@ -10,7 +10,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
     private joinRequest: Promise<Response>;
     private csrfToken: string;
     private users: any[] = [];
-    private hereCallbacks: Function[] = [];
+    private hereCallbacks: CallableFunction[] = [];
 
     private unloadCallback: () => void = this.unsubscribeBeacon.bind(this);
 
@@ -50,7 +50,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
         })
     }
 
-    public here(callback: Function): WavePresenceChannel {
+    public here(callback: CallableFunction): this {
         if (this.joined) {
             request(this.connection)
                 .get(this.options.endpoint + '/presence-channel-users', this.options, { channel_name: this.name })
@@ -68,7 +68,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
     /**
      * Listen for someone joining the channel.
      */
-    public joining(callback: Function): WavePresenceChannel {
+    public joining(callback: CallableFunction): this {
         this.listen('.join', callback);
 
         return this;
@@ -77,7 +77,7 @@ export default class WavePresenceChannel extends WavePrivateChannel implements P
     /**
      * Listen for someone leaving the channel.
      */
-    public leaving(callback: Function): WavePresenceChannel {
+    public leaving(callback: CallableFunction): this {
         this.listen('.leave', callback);
 
         return this;

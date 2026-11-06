@@ -2,7 +2,9 @@ import babel from '@rollup/plugin-babel';
 import typescript from 'rollup-plugin-typescript2';
 
 const plugins = [
-    typescript(),
+    // rpt2's default include globs (`*.ts+(|x)`) no longer match under picomatch >= 2.3.1,
+    // which silently leaves TypeScript sources untransformed.
+    typescript({ include: ['**/*.ts'] }),
     babel({
         babelHelpers: 'bundled',
         exclude: 'node_modules/**',

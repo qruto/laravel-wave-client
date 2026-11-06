@@ -123,3 +123,37 @@ test('echo presence channel unsubscribe', async () => {
     // Make sure to wait a bit to ensure unsubscribe effect.
     expect(listener).not.toHaveBeenCalled();
 });
+
+test('echo connection status', async () => {
+    expect(echo.connectionStatus()).toBe('connected');
+
+    const unsubscribed = jest.fn();
+    const changes: string[] = [];
+
+    echo.connector.onConnectionChange(unsubscribed)();
+    echo.connector.onConnectionChange((status: string) => { changes.push(status); });
+
+    echo.disconnect();
+
+    expect(echo.connectionStatus()).toBe('disconnected');
+    expect(changes).toEqual(['disconnected']);
+    expect(unsubscribed).not.toHaveBeenCalled();
+});
+
+test('echo stop listening for a single callback', async () => {
+    const removed = jest.fn();
+
+    const result = await prepare(
+        (resolve) => {
+            const channel = echo.channel('public');
+
+            channel.listen('SomeEvent', removed);
+            channel.listen('SomeEvent', (data) => resolve(data));
+            channel.stopListening('SomeEvent', removed);
+        },
+        () => fireEvent('public.' + eventFormatter.format('SomeEvent'), { foo: 'bar' })
+    );
+
+    expect(result).toEqual({ foo: 'bar' });
+    expect(removed).not.toHaveBeenCalled();
+});
